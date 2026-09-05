@@ -5,15 +5,7 @@ import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { isParentRole, type AgeGroup } from "@/lib/auth";
-
-function inviteCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let suffix = "";
-  for (let i = 0; i < 4; i += 1) {
-    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return `KIDOO-${suffix}`;
-}
+import { ensureKidsAccessKey } from "@/lib/kids-access";
 
 function randomPassword() {
   return crypto.randomUUID() + crypto.randomUUID();
@@ -67,14 +59,12 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     display_name?: string;
     age_group?: AgeGroup;
-    pin?: string;
   };
   const displayName = (body.display_name ?? "").trim();
   const ageGroup = body.age_group;
-  const pin = (body.pin ?? "").trim();
 
-  if (!displayName || !ageGroup || !/^\d{4}$/.test(pin)) {
-    return NextResponse.json({ error: "Preencha nome, faixa e PIN de 4 dígitos." }, { status: 400 });
+  if (!displayName || !ageGroup) {
+    return NextResponse.json({ error: "Preencha nome e faixa etária." }, { status: 400 });
   }
 
   try {
@@ -105,7 +95,11 @@ export async function POST(request: Request) {
       }
     }
 
-    const code = inviteCode();
+    if (!familyId) {
+      return NextResponse.json({ error: "Família não encontrada." }, { status: 400 });
+    }
+
+    const kidsAccessKey = await ensureKidsAccessKey(admin, familyId);
     const password = randomPassword();
     const email = `child.${crypto.randomUUID()}@users.kidoo.internal`;
 
@@ -127,22 +121,12 @@ export async function POST(request: Request) {
 
     const newId = created.user.id;
 
-    const { data: pinHash, error: hashError } = await admin.rpc("hash_child_pin", {
-      p_pin: pin,
-    });
-    if (hashError || !pinHash) {
-      await admin.auth.admin.deleteUser(newId);
-      return NextResponse.json({ error: "Falha ao salvar PIN." }, { status: 500 });
-    }
-
     const { error: profileError } = await admin.from("profiles").insert({
       id: newId,
       family_id: familyId,
       role: "child",
       display_name: displayName,
       age_group: ageGroup,
-      invite_code: code,
-      pin_hash: pinHash,
     });
 
     if (profileError) {
@@ -155,10 +139,8 @@ export async function POST(request: Request) {
         id: newId,
         display_name: displayName,
         age_group: ageGroup,
-        invite_code: code,
       },
-      invite_code: code,
-      pin,
+      kids_access_key: kidsAccessKey,
     });
   } catch {
     return NextResponse.json(

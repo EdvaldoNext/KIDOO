@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
+import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 
 export async function POST(request: Request) {
   if (!DEV_BYPASS_AUTH) {
@@ -23,6 +25,11 @@ export async function POST(request: Request) {
 
   if (!taskId || !completionId || !familyId || !childId) {
     return NextResponse.json({ error: "Dados da tarefa incompletos." }, { status: 400 });
+  }
+
+  const selectedChildId = (await cookies()).get(DEV_CHILD_COOKIE)?.value;
+  if (selectedChildId && selectedChildId !== childId) {
+    return NextResponse.json({ error: "Essa tarefa é de outro filho." }, { status: 403 });
   }
 
   const admin = createServiceClient();

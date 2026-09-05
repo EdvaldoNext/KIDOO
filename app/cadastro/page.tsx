@@ -12,8 +12,8 @@ export default function CadastroPage() {
         <BrandLogo size="lg" />
       </Link>
       <p className="mb-4 max-w-md text-center text-navy/70">
-        Cadastro só para pais. Depois você cadastra os filhos e eles entram com
-        código e PIN.
+        Cadastro só para pais. Depois você cadastra os filhos e envia o link com
+        a chave da família.
       </p>
       <SignUpForm />
       </div>

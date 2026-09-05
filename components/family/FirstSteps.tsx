@@ -11,7 +11,7 @@ export function FirstSteps({ childCount, openTaskCount }: FirstStepsProps) {
       done: childCount > 0,
       href: "/app/filhos",
       title: "Cadastrar um filho",
-      text: "Gere o código e o PIN para a criança entrar.",
+      text: "Gere o link e a chave para a criança entrar.",
       disabled: false,
     },
     {

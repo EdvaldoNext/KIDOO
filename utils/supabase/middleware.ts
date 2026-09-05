@@ -56,7 +56,8 @@ export async function updateSession(request: NextRequest) {
   const isAdminLogin = path === "/admin/login";
   const isKidsPath = path.startsWith("/app/kids");
   const isFamilyApp = path.startsWith("/app");
-  const isFamilyLogin = path === "/login" || path === "/cadastro" || path === "/onboarding";
+  const isKidsEntry = path === "/entrar";
+  const isFamilyLogin = path === "/login" || path === "/cadastro" || path === "/onboarding" || isKidsEntry;
 
   if (isAdminPath) {
     if (isAdminLogin) {
@@ -71,7 +72,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isKidsPath) {
-    if (!authed) return redirect("/login");
+    if (!authed) return redirect("/entrar");
     if (admin) return redirect("/admin");
     if (role !== "child") return redirect("/app");
     return supabaseResponse;
@@ -87,7 +88,12 @@ export async function updateSession(request: NextRequest) {
 
   if (isFamilyLogin && authed) {
     if (admin) return redirect("/admin");
-    if (role === "child") return redirect("/app/kids");
+    if (role === "child") {
+      if (isKidsEntry && request.nextUrl.searchParams.get("trocar") === "1") {
+        return supabaseResponse;
+      }
+      return redirect("/app/kids");
+    }
     if (isParentRole(role)) return redirect("/app");
   }
 

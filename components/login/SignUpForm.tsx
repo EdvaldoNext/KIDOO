@@ -143,7 +143,7 @@ export function SignUpForm() {
         <span className="inline-flex items-center">
           Senha (mín. 8 caracteres)
           <HelpTip label="Ajuda sobre a senha">
-            Só os pais usam e-mail e senha. Os filhos entram depois com código e PIN.
+            Só os pais usam e-mail e senha. Os filhos entram depois com o link e a chave.
           </HelpTip>
         </span>
         <input name="password" type="password" required minLength={8} autoComplete="new-password" className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-3 outline-none ring-royal focus:ring-2" />

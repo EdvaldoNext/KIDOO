@@ -11,6 +11,7 @@ export function KidsScoreboard({
   size = "compact",
   reward = null,
   hrefForKid,
+  currentKidId,
 }: {
   kids: Kid[];
   scores: Score[];
@@ -18,6 +19,7 @@ export function KidsScoreboard({
   size?: "compact" | "large";
   reward?: FamilyReward | null;
   hrefForKid?: (kidId: string) => string;
+  currentKidId?: string | null;
 }) {
   if (kids.length === 0) return null;
 
@@ -41,6 +43,7 @@ export function KidsScoreboard({
             >
               <p className={`truncate font-extrabold capitalize ${large ? "text-sm sm:text-xl" : "text-xs sm:text-sm"}`}>
                 {kid.display_name}
+                {currentKidId === kid.id ? " · você" : ""}
               </p>
               <p
                 className={`mt-1 font-extrabold leading-none sm:mt-2 ${

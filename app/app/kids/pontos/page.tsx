@@ -28,11 +28,6 @@ export default async function KidsPointsPage() {
     childrenQuery = childrenQuery.eq("family_id", familyId);
     tasksQuery = tasksQuery.eq("family_id", familyId);
   }
-  if (!devMode && childId) {
-    scoresQuery = scoresQuery.eq("child_id", childId);
-    childrenQuery = childrenQuery.eq("id", childId);
-    tasksQuery = tasksQuery.eq("assigned_child_id", childId);
-  }
 
   const [{ data: scores }, { data: kids }, { data: tasks }, reward] = await Promise.all([
     scoresQuery,
@@ -62,6 +57,7 @@ export default async function KidsPointsPage() {
             pendingByChild={pendingByChild}
             size="large"
             reward={reward}
+            currentKidId={childId}
           />
         )}
       </section>

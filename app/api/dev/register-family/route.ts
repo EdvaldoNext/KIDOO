@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
+import { generateKidsAccessKey } from "@/lib/kids-access";
 
 function alreadyExists(error: { message?: string; code?: string } | null) {
   const message = (error?.message ?? "").toLowerCase();
@@ -110,7 +111,11 @@ export async function POST(request: Request) {
     if (!familyId) {
       const { data: family, error: familyError } = await admin
         .from("families")
-        .insert({ name: familyName, lgpd_accepted_at: new Date().toISOString() })
+        .insert({
+          name: familyName,
+          lgpd_accepted_at: new Date().toISOString(),
+          kids_access_key: generateKidsAccessKey(),
+        })
         .select("id")
         .single();
 

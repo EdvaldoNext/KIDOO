@@ -3,6 +3,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
 import { getAppContext } from "@/lib/app-context";
+import { KidsNav } from "@/components/kids/KidsNav";
 import { kidsPointsNavLabel, loadFamilyReward } from "@/lib/rewards";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export default async function KidsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { supabase, familyId, childId, devMode } = await getAppContext();
+  const { supabase, familyId, childId } = await getAppContext();
 
   let childrenQuery = supabase
     .from("profiles")
@@ -26,7 +27,7 @@ export default async function KidsLayout({
     loadFamilyReward(supabase, familyId),
   ]);
   const current = (kids ?? []).find((kid) => kid.id === childId);
-  const headerName = !devMode ? (current?.display_name ?? "") : "";
+  const headerName = current?.display_name ?? "";
   const huge = current?.age_group === "6_9";
 
   return (
@@ -35,16 +36,14 @@ export default async function KidsLayout({
       <header className="flex items-center justify-between gap-2 bg-success px-4 py-4 text-navy">
         <BrandLogo size="sm" />
         {headerName ? <p className="min-w-0 truncate px-2 text-center font-extrabold">{headerName}</p> : <span />}
-        <SignOutButton label="Sair" />
+        <div className="flex shrink-0 items-center gap-2">
+          <Link href="/entrar?trocar=1" className="rounded-lg bg-white/15 px-3 py-1.5 text-sm font-bold">
+            Trocar
+          </Link>
+          <SignOutButton label="Sair" redirectTo="/entrar" />
+        </div>
       </header>
-      <nav className="flex flex-wrap gap-2 px-4 py-3">
-        <Link href="/app/kids" className="rounded-2xl bg-white px-4 py-3 font-extrabold ring-1 ring-navy/10">
-          Tarefas
-        </Link>
-        <Link href="/app/kids/pontos" className="rounded-2xl bg-gold px-4 py-3 font-extrabold text-navy">
-          {kidsPointsNavLabel(reward)}
-        </Link>
-      </nav>
+      <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />
       <main className="px-4 pb-10">{children}</main>
     </div>
   );

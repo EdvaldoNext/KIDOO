@@ -4,6 +4,7 @@ import { createServiceClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { familyRole, isParentRole, type AppClaims, type UserRole } from "@/lib/auth";
+import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 
 export const DEV_FAMILY_COOKIE = "kidoo_dev_family_id";
 
@@ -37,7 +38,10 @@ async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null
     return { ownerId: null as string | null, childId: null as string | null };
   }
 
-  const [{ data: parents }, { data: children }] = await Promise.all([
+  const cookieStore = await cookies();
+  const selectedChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
+
+  const [{ data: parents }, { data: selectedChild }, { data: children }] = await Promise.all([
     admin
       .from("profiles")
       .select("id")
@@ -45,6 +49,15 @@ async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null
       .in("role", ["owner", "parent"])
       .order("created_at", { ascending: true })
       .limit(1),
+    selectedChildId
+      ? admin
+          .from("profiles")
+          .select("id")
+          .eq("id", selectedChildId)
+          .eq("family_id", familyId)
+          .eq("role", "child")
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     admin
       .from("profiles")
       .select("id")
@@ -56,7 +69,7 @@ async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null
 
   return {
     ownerId: parents?.[0]?.id ?? null,
-    childId: children?.[0]?.id ?? null,
+    childId: selectedChild?.id ?? children?.[0]?.id ?? null,
   };
 }
 

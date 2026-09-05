@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LoginForm } from "@/components/login/LoginForm";
 import { DevModeBanner } from "@/components/DevModeBanner";
@@ -10,7 +11,7 @@ export default async function LoginPage({
   searchParams: Promise<{ modo?: string }>;
 }) {
   const { modo } = await searchParams;
-  const defaultMode = modo === "filho" ? "child" : "parent";
+  if (modo === "filho") redirect("/entrar");
 
   return (
     <div className="min-h-full">
@@ -21,12 +22,10 @@ export default async function LoginPage({
       </Link>
       <p className="mb-4 max-w-md text-center text-navy/70">
         {CLIENT_DEV_BYPASS_AUTH
-          ? "Modo teste: entre direto, sem código, PIN ou senha."
-          : defaultMode === "child"
-            ? "Use o código e o PIN que seus pais te passaram."
-            : "Pais entram com e-mail. Filhos entram com código e PIN."}
+          ? "Modo teste: entre direto, sem e-mail ou chave."
+          : "Pais entram com e-mail. Filhos usam o link e a chave da família."}
       </p>
-      <LoginForm defaultMode={defaultMode} />
+      <LoginForm />
       </div>
     </div>
   );

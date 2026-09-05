@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { RejectionFeedback } from "@/components/tasks/RejectionFeedback";
 import { photoKey, STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 
@@ -15,7 +16,13 @@ type Task = {
   assigned_child_id: string;
 };
 
-export function CompleteTask({ task }: { task: Task }) {
+export function CompleteTask({
+  task,
+  rejectionNote = null,
+}: {
+  task: Task;
+  rejectionNote?: string | null;
+}) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -154,6 +161,7 @@ export function CompleteTask({ task }: { task: Task }) {
   return (
     <div className="space-y-4">
       <h1 className="text-3xl font-extrabold">{task.title}</h1>
+      {rejectionNote !== undefined ? <RejectionFeedback note={rejectionNote} /> : null}
       {mustPhoto ? (
         <p className="font-bold text-navy/70">Tire uma foto para provar. Não dá para pular.</p>
       ) : (
