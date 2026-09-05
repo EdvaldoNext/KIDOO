@@ -17,16 +17,12 @@ export default async function ParentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const profile = null;
-  const family = null;
-
   return (
     <div className="min-h-full min-w-0 overflow-x-hidden bg-canvas">
       <DevModeBanner />
       <header className="sticky top-0 z-20 border-b border-navy/10 bg-royal text-white">
         <div className="mx-auto flex w-full min-w-0 max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <BrandLogo size="sm" />
-          <p className="hidden min-w-0 truncate text-sm font-semibold sm:block">{family?.name}</p>
           <SignOutButton label="Sair" />
         </div>
         <nav className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap gap-1.5 px-4 pb-3">

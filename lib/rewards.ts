@@ -40,7 +40,7 @@ export function isAllowanceMoney(reward: FamilyReward | null | undefined) {
 }
 
 export function toReais(points: number, reward: FamilyReward | null | undefined) {
-  if (!isAllowanceMoney(reward)) return points;
+  if (!reward || !isAllowanceMoney(reward)) return points;
   return points * Number(reward.currency_amount);
 }
 

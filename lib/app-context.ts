@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
-import { familyRole, isParentRole, type UserRole } from "@/lib/auth";
+import { familyRole, isParentRole, type AppClaims, type UserRole } from "@/lib/auth";
 
 export const DEV_FAMILY_COOKIE = "kidoo_dev_family_id";
 
@@ -78,9 +78,10 @@ export async function getAppContext(): Promise<AppContext> {
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  const role = familyRole(data?.claims) as UserRole | null;
-  const userId = data?.claims?.sub ?? null;
-  const familyId = (data?.claims?.app_metadata?.family_id as string | undefined) ?? null;
+  const claims = data?.claims as AppClaims | undefined;
+  const role = familyRole(claims) as UserRole | null;
+  const userId = claims?.sub ?? null;
+  const familyId = claims?.app_metadata?.family_id ?? null;
 
   return {
     supabase,
