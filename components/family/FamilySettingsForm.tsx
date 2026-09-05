@@ -153,12 +153,16 @@ export function FamilySettingsForm({ family }: { family: Family }) {
       </form>
 
       <div className="rounded-2xl bg-white p-6 ring-1 ring-navy/5">
-        <p className="font-bold">Localização 24h</p>
+        <p className="font-bold">Localização</p>
         <p className="mt-1 text-sm text-navy/70">
-          Desligada nesta versão. O KIDOO usa GPS só no momento da foto da tarefa.
+          O GPS é capturado ao concluir uma tarefa. Veja o mapa em{" "}
+          <a href="/app/localizacao" className="font-bold text-royal underline">
+            Local
+          </a>{" "}
+          ou na tela de aprovação de fotos.
         </p>
         <p className="mt-2 text-xs font-bold text-navy/50">
-          Status: {family.location_24h_enabled ? "on" : "off (padrão)"}
+          Rastreamento 24h: {family.location_24h_enabled ? "ligado" : "desligado (padrão)"}
         </p>
       </div>
 

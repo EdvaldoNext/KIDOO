@@ -1,4 +1,5 @@
 import { getAppContext } from "@/lib/app-context";
+import { LocationMap } from "@/components/location/LocationMap";
 import { ApprovalActions } from "@/components/tasks/ApprovalActions";
 import { STORAGE_BUCKET } from "@/lib/photo-key";
 
@@ -73,11 +74,17 @@ export default async function ApprovalsPage() {
                   <p className="text-sm text-navy/70">
                     {new Date(item.captured_at).toLocaleString("pt-BR")}
                   </p>
-                  <p className="text-sm text-navy/70">
-                    {item.location_available
-                      ? `Local aproximado (${item.lat?.toFixed(4)}, ${item.lng?.toFixed(4)}) — GPS pode variar dentro de casa.`
-                      : "Local não disponível"}
-                  </p>
+                  {item.location_available && item.lat != null && item.lng != null ? (
+                    <div className="space-y-2">
+                      <LocationMap lat={item.lat} lng={item.lng} label="Local da tarefa" />
+                      <p className="text-xs text-navy/60">
+                        GPS aproximado ({item.lat.toFixed(4)}, {item.lng.toFixed(4)}) — pode variar dentro de
+                        casa.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-navy/70">Local não disponível</p>
+                  )}
                   <ApprovalActions completionId={item.id} />
                 </div>
               </article>

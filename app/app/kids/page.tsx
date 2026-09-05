@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
 import { KidsScoreboard } from "@/components/kids/KidsScoreboard";
+import { formatTaskDueAt } from "@/lib/dates";
 import { formatRewardAmountWithUnit, loadFamilyReward, type FamilyReward } from "@/lib/rewards";
 import { STATUS_LABEL } from "@/lib/status";
 
@@ -13,6 +14,7 @@ type Task = {
   weight: number;
   kind: string;
   assigned_child_id: string;
+  due_at: string | null;
 };
 
 function SectionTitle({ children }: { children: ReactNode }) {
@@ -20,9 +22,14 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 function TaskCard({ task, reward }: { task: Task; reward: FamilyReward | null }) {
+  const dueLabel = formatTaskDueAt(task.due_at);
+
   return (
     <div className="rounded-2xl bg-white p-4 ring-1 ring-navy/5 sm:p-5">
       <p className="wrap-break-word text-xl font-extrabold sm:text-2xl">{task.title}</p>
+      {dueLabel ? (
+        <p className="mt-2 text-sm font-bold text-royal">Fazer até: {dueLabel}</p>
+      ) : null}
       <p className="mt-1 text-navy/70">
         {STATUS_LABEL[task.status]}
         {task.kind === "points" ? ` · ${formatRewardAmountWithUnit(task.weight, reward)}` : ""}
@@ -47,7 +54,7 @@ export default async function KidsHomePage() {
 
   let tasksQuery = supabase
     .from("tasks")
-    .select("id, title, status, weight, kind, require_photo, assigned_child_id")
+    .select("id, title, status, weight, kind, require_photo, assigned_child_id, due_at")
     .in("status", ["pending", "awaiting_approval"])
     .order("created_at", { ascending: false });
 
