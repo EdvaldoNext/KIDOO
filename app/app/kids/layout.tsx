@@ -5,6 +5,8 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { getAppContext } from "@/lib/app-context";
 import { kidsPointsNavLabel, loadFamilyReward } from "@/lib/rewards";
 
+export const dynamic = "force-dynamic";
+
 export default async function KidsLayout({
   children,
 }: {

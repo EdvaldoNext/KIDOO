@@ -3,6 +3,8 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
 
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { href: "/app", label: "Hoje" },
   { href: "/app/tarefas", label: "Tarefas" },

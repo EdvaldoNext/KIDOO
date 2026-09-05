@@ -2,6 +2,8 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SignOutButton } from "@/components/SignOutButton";
 
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { href: "/admin", label: "Analytics" },
   { href: "/admin/familias", label: "Famílias" },
