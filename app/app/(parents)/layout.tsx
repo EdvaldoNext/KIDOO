@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
+
+export const metadata: Metadata = {
+  title: "KIDOO",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "KIDOO",
+    statusBarStyle: "default",
+  },
+};
 
 export const dynamic = "force-dynamic";
 

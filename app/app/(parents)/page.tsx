@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
 import { STATUS_CLASS, STATUS_LABEL } from "@/lib/status";
 import { FirstSteps } from "@/components/family/FirstSteps";
+import { InstallParentApp } from "@/components/family/InstallParentApp";
 
 export default async function ParentHomePage() {
   const { supabase, familyId } = await getAppContext();
@@ -38,6 +39,7 @@ export default async function ParentHomePage() {
 
   return (
     <div className="space-y-6">
+      <InstallParentApp />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold">Hoje na família</h1>

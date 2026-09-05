@@ -1,10 +1,15 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { KidsEnterFlow } from "@/components/kids/KidsEnterFlow";
-import { hasActiveKidsSession } from "@/lib/kids-pwa";
+import { hasActiveKidsSession, KIDS_PWA_MANIFEST_PATH } from "@/lib/kids-pwa";
+
+export const metadata: Metadata = {
+  manifest: KIDS_PWA_MANIFEST_PATH,
+};
 
 export default async function KidsEnterPage({
   searchParams,

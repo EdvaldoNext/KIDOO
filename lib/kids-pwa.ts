@@ -5,6 +5,7 @@ import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 
+export const PARENT_PWA_START_URL = "/app";
 export const KIDS_PWA_START_URL = "/app/kids";
 export const KIDS_PWA_MANIFEST_PATH = "/kids.webmanifest";
 
@@ -33,6 +34,22 @@ export async function hasActiveKidsSession() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   return familyRole(data?.claims as AppClaims | undefined) === "child";
+}
+
+export function parentPwaManifest() {
+  return {
+    id: PARENT_PWA_START_URL,
+    name: "KIDOO",
+    short_name: "KIDOO",
+    description: "Tarefas em família com prova em foto",
+    start_url: PARENT_PWA_START_URL,
+    scope: "/",
+    display: "standalone" as const,
+    background_color: "#F4F7FB",
+    theme_color: "#187bcd",
+    lang: "pt-BR",
+    icons: KIDO_PWA_ICONS,
+  };
 }
 
 export function kidsPwaManifest(appName: string) {
