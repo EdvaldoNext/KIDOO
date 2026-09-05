@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAppContext } from "@/lib/app-context";
 import { CompleteTask } from "@/components/kids/CompleteTask";
+import { KidsMascot } from "@/components/kids/KidsMascot";
 
 export default async function CompletePage({
   params,
@@ -30,13 +31,15 @@ export default async function CompletePage({
       .maybeSingle();
 
     return (
-      <div className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-navy/5">
+      <div className="space-y-4 rounded-3xl bg-white p-6 ring-2 ring-royal/20">
+        <KidsMascot size="header" />
         <h1 className="text-2xl font-extrabold">{task.title}</h1>
-        <p className="font-bold text-navy/70">
-          Essa tarefa é de {owner?.display_name ?? "outro filho"}. Você pode olhar, mas não concluir.
+        <p className="font-extrabold text-navy/70">
+          Essa missão é de {owner?.display_name ?? "outra criança"}. Dá para olhar e se inspirar, mas só{" "}
+          {owner?.display_name ?? "ela"} pode concluir.
         </p>
         <Link href="/app/kids" className="inline-block rounded-2xl bg-royal px-5 py-3 font-extrabold text-white">
-          Voltar às tarefas
+          Voltar às missões
         </Link>
       </div>
     );

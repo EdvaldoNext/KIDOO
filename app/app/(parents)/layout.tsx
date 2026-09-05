@@ -3,6 +3,9 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
+import { ParentNav } from "@/components/family/ParentNav";
+import { getAppContext } from "@/lib/app-context";
+import { kidsPointsNavLabel } from "@/lib/rewards";
 
 export const metadata: Metadata = {
   title: "KIDOO",
@@ -16,40 +19,40 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const NAV = [
-  { href: "/app", label: "Hoje" },
-  { href: "/app/tarefas", label: "Tarefas" },
-  { href: "/app/aprovacoes", label: "Aprovar" },
-  { href: "/app/localizacao", label: "Local" },
-  { href: "/app/filhos", label: "Filhos" },
-  { href: "/app/pontos", label: "Pontos" },
-  { href: "/app/configuracoes", label: "Config" },
-];
-
 export default async function ParentLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { supabase, familyId } = await getAppContext();
+
+  let waitingCount = 0;
+  let pointsLabel = "Pontos";
+
+  if (familyId) {
+    const [waitingQuery, familyQuery] = await Promise.all([
+      supabase
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("family_id", familyId)
+        .eq("status", "awaiting_approval"),
+      supabase.from("families").select("reward_mode, currency_amount").eq("id", familyId).maybeSingle(),
+    ]);
+    waitingCount = waitingQuery.count ?? 0;
+    pointsLabel = kidsPointsNavLabel(familyQuery.data);
+  }
+
   return (
     <div className="min-h-full min-w-0 overflow-x-hidden bg-canvas">
       <DevModeBanner />
-      <header className="sticky top-0 z-20 border-b border-navy/10 bg-royal text-white">
-        <div className="mx-auto flex w-full min-w-0 max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <BrandLogo size="sm" />
+      <header className="sticky top-0 z-20 border-b-2 border-gold bg-royal text-white">
+        <div className="mx-auto flex w-full min-w-0 max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
+          <Link href="/app" aria-label="KIDOO, ir para hoje" className="shrink-0">
+            <BrandLogo size="nav" wordmark={false} className="ring-2 ring-white shadow-lg" />
+          </Link>
           <SignOutButton label="Sair" />
         </div>
-        <nav className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap gap-1.5 px-4 pb-3">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-bold hover:bg-white/20 sm:px-3 sm:text-sm"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <ParentNav waitingCount={waitingCount} pointsLabel={pointsLabel} />
       </header>
       <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">{children}</main>
     </div>

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
 import { LocationMap } from "@/components/location/LocationMap";
+import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
+import { KidAvatar } from "@/components/kids/KidAvatar";
+import { prettyName } from "@/lib/names";
 
 type ChildLocation = {
   childId: string;
@@ -32,14 +35,18 @@ export default async function LocationPage() {
     tasksQuery = tasksQuery.eq("family_id", familyId);
   }
 
-  const [{ data: completions }, { data: children }, { data: tasks }] = await Promise.all([
+  const [{ data: completions }, { data: children }, { data: tasks }, familyResult] = await Promise.all([
     completionsQuery,
     childrenQuery,
     tasksQuery,
+    familyId
+      ? supabase.from("families").select("location_24h_enabled").eq("id", familyId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
-  const childMap = new Map((children ?? []).map((c) => [c.id, c.display_name]));
+  const childMap = new Map((children ?? []).map((c) => [c.id, prettyName(c.display_name)]));
   const taskMap = new Map((tasks ?? []).map((t) => [t.id, t.title]));
+  const locationOn = Boolean(familyResult.data?.location_24h_enabled);
 
   const latestByChild = new Map<string, ChildLocation>();
   for (const item of completions ?? []) {
@@ -61,20 +68,34 @@ export default async function LocationPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-extrabold">Localização dos filhos</h1>
-        <p className="mt-1 text-sm text-navy/70">
-          Último local registrado ao concluir uma tarefa (GPS no momento da foto). Pode variar alguns metros
-          dentro de casa.
-        </p>
-      </div>
+      <ParentPageHeader
+        eyebrow="Prova da tarefa"
+        title="Localização"
+        subtitle={
+          locations.length === 0
+            ? "Ainda não há local registrado."
+            : "Último local de cada criança ao concluir uma tarefa."
+        }
+      />
+      <ParentTrustStrip
+        aside={
+          locationOn ? (
+            <Link href="/app/configuracoes" className="font-bold text-royal hover:underline">
+              Localização 24h ligada · gerenciar
+            </Link>
+          ) : (
+            "Pode variar alguns metros dentro de casa."
+          )
+        }
+      >
+        GPS só no momento da foto, não um rastreador o dia todo.
+      </ParentTrustStrip>
 
       {locations.length === 0 ? (
         <div className="rounded-2xl bg-white p-6 text-navy/70 ring-1 ring-navy/5">
           <p className="font-bold">Nenhuma localização ainda.</p>
           <p className="mt-2 text-sm">
-            Quando um filho concluir uma tarefa com GPS ativo, o mapa aparecerá aqui. Peça para concluir uma
-            tarefa de teste em{" "}
+            Quando um filho concluir uma tarefa com GPS ativo, o mapa aparece aqui. Dá para testar em{" "}
             <Link href="/app/kids" className="font-bold text-royal underline">
               Tarefas (filhos)
             </Link>
@@ -86,8 +107,13 @@ export default async function LocationPage() {
           {locations.map((loc) => (
             <article key={loc.childId} className="overflow-hidden rounded-2xl bg-white ring-1 ring-navy/5">
               <LocationMap lat={loc.lat} lng={loc.lng} label={`Local de ${loc.childName}`} className="h-52" />
-              <div className="space-y-1 p-4">
-                <p className="font-extrabold capitalize text-royal">{loc.childName}</p>
+              <div className="space-y-2 p-4">
+                <div className="flex items-center gap-3">
+                  <span aria-hidden>
+                    <KidAvatar name={loc.childName} size="sm" />
+                  </span>
+                  <p className="font-extrabold">{loc.childName}</p>
+                </div>
                 {loc.taskTitle ? <p className="text-sm font-semibold">{loc.taskTitle}</p> : null}
                 <p className="text-sm text-navy/70">
                   Registrado em {new Date(loc.capturedAt).toLocaleString("pt-BR")}
@@ -96,7 +122,7 @@ export default async function LocationPage() {
                   href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block pt-1 text-sm font-bold text-royal underline"
+                  className="inline-block pt-1 text-sm font-bold text-royal hover:underline"
                 >
                   Abrir no Google Maps
                 </a>

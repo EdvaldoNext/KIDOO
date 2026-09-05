@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ageGroupLabel, type AgeGroup } from "@/lib/auth";
+import { prettyName } from "@/lib/names";
 import { HelpTip } from "@/components/HelpTip";
 import { KidAvatar } from "@/components/kids/KidAvatar";
 import { KidsAccessCard } from "@/components/family/KidsAccessCard";
@@ -113,6 +114,7 @@ export function ChildrenManager({
     <div className="grid gap-6 lg:grid-cols-2">
       <form action={onSubmit} className="space-y-4 rounded-2xl bg-white p-6 ring-1 ring-navy/5">
         <h2 className="text-lg font-extrabold">Adicionar filho</h2>
+        <p className="text-sm text-navy/65">Como a criança vai aparecer no app.</p>
         <label className="block text-sm font-semibold">
           Nome / apelido
           <input name="display_name" required className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-3" />
@@ -146,6 +148,11 @@ export function ChildrenManager({
           >
             Criar primeira tarefa
           </Link>
+        ) : null}
+        {list.length === 0 ? (
+          <p className="rounded-2xl bg-white p-6 text-navy/70 ring-1 ring-navy/5">
+            Ainda não há filhos cadastrados. Use o formulário ao lado.
+          </p>
         ) : null}
         {list.map((child) => (
           <div key={child.id} className="rounded-2xl bg-white p-4 ring-1 ring-navy/5">
@@ -192,9 +199,9 @@ export function ChildrenManager({
               </form>
             ) : (
               <div className="flex items-center gap-3">
-                <KidAvatar name={child.display_name} />
+                <KidAvatar name={prettyName(child.display_name)} />
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold capitalize">{child.display_name}</p>
+                  <p className="font-extrabold">{prettyName(child.display_name)}</p>
                   <p className="text-sm text-navy/70">{ageGroupLabel(child.age_group)}</p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">

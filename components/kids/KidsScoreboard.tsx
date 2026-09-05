@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KidAvatar } from "@/components/kids/KidAvatar";
 import { formatRewardAmount, isAllowanceMoney, monthBalanceLabel, type FamilyReward } from "@/lib/rewards";
 
 type Kid = { id: string; display_name: string };
@@ -25,7 +26,7 @@ export function KidsScoreboard({
 
   const large = size === "large";
   const columns =
-    kids.length === 1 ? "grid-cols-1" : kids.length === 2 ? "grid-cols-2" : "grid-cols-3";
+    kids.length === 1 ? "grid-cols-1" : kids.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3";
 
   return (
     <section aria-label={isAllowanceMoney(reward) ? "Ganhos de cada filho" : "Pontos de cada filho"}>
@@ -33,21 +34,25 @@ export function KidsScoreboard({
         {kids.map((kid) => {
           const score = scores.find((s) => s.child_id === kid.id);
           const pending = pendingByChild?.[kid.id] ?? 0;
+          const isYou = currentKidId === kid.id;
           return (
             <Link
               key={kid.id}
               href={hrefForKid?.(kid.id) ?? "/app/kids/pontos"}
-              className={`block min-w-0 rounded-2xl bg-gold text-navy ring-1 ring-navy/10 ${
-                large ? "p-3 sm:p-6" : "p-2.5 sm:p-4"
-              }`}
+              className={`kids-pop block min-w-0 rounded-3xl text-navy ring-2 ${
+                isYou ? "bg-gold ring-navy/20" : "bg-white ring-navy/10"
+              } ${large ? "p-3 sm:p-5" : "p-2.5 sm:p-4"}`}
             >
-              <p className={`truncate font-extrabold capitalize ${large ? "text-sm sm:text-xl" : "text-xs sm:text-sm"}`}>
-                {kid.display_name}
-                {currentKidId === kid.id ? " · você" : ""}
-              </p>
+              <div className="flex items-center gap-2">
+                <KidAvatar name={kid.display_name} size="sm" className={isYou ? "ring-2 ring-navy/20" : ""} />
+                <p className={`min-w-0 truncate font-extrabold capitalize ${large ? "text-sm sm:text-lg" : "text-xs sm:text-sm"}`}>
+                  {kid.display_name}
+                  {isYou ? " · você" : ""}
+                </p>
+              </div>
               <p
-                className={`mt-1 font-extrabold leading-none sm:mt-2 ${
-                  large ? "text-2xl sm:text-5xl" : "text-lg sm:text-3xl"
+                className={`mt-2 font-extrabold leading-none ${
+                  large ? "text-2xl sm:text-4xl" : "text-lg sm:text-3xl"
                 }`}
               >
                 {formatRewardAmount(score?.balance ?? 0, reward)}
@@ -62,8 +67,8 @@ export function KidsScoreboard({
                 </p>
               ) : null}
               {pending > 0 ? (
-                <p className="mt-1 truncate text-[10px] font-semibold text-navy/70 sm:text-sm">
-                  +{formatRewardAmount(pending, reward)} em aberto
+                <p className="mt-1 truncate text-[10px] font-extrabold text-royal sm:text-sm">
+                  +{formatRewardAmount(pending, reward)} se fizer as missões
                 </p>
               ) : null}
             </Link>

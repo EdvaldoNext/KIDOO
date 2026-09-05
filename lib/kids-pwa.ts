@@ -10,9 +10,9 @@ export const KIDS_PWA_START_URL = "/app/kids";
 export const KIDS_PWA_MANIFEST_PATH = "/kids.webmanifest";
 
 export const KIDO_PWA_ICONS = [
-  { src: "/icons/192", sizes: "192x192", type: "image/png", purpose: "any" as const },
-  { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "any" as const },
-  { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "maskable" as const },
+  { src: "/icons/192.png", sizes: "192x192", type: "image/png", purpose: "any" as const },
+  { src: "/icons/512.png", sizes: "512x512", type: "image/png", purpose: "any" as const },
+  { src: "/icons/512.png", sizes: "512x512", type: "image/png", purpose: "maskable" as const },
 ];
 
 export type KidsPwaIdentity = {

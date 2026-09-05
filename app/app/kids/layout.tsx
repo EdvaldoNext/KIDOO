@@ -47,22 +47,31 @@ export default async function KidsLayout({
   const huge = current?.age_group === "6_9";
 
   return (
-    <div className={`min-h-full min-w-0 overflow-x-hidden bg-canvas ${huge ? "text-lg" : ""}`}>
+    <div className={`kids-play min-h-full min-w-0 overflow-x-hidden ${huge ? "text-lg" : ""}`}>
       <DevModeBanner />
-      <header className="flex items-center justify-between gap-2 bg-success px-4 py-4 text-navy">
-        <BrandLogo size="sm" />
-        {headerName ? <p className="min-w-0 truncate px-2 text-center font-extrabold">{headerName}</p> : <span />}
+      <header className="flex items-center justify-between gap-2 bg-success px-4 py-3 text-navy">
+        <Link href="/app/kids" aria-label="KIDOO, ir para as missões" className="shrink-0">
+          <BrandLogo size="header" wordmark={false} />
+        </Link>
+        {headerName ? (
+          <p className="min-w-0 truncate px-2 text-center font-extrabold">Oi, {headerName}!</p>
+        ) : (
+          <span />
+        )}
         <div className="flex shrink-0 items-center gap-2">
-          <Link href="/entrar?trocar=1" className="rounded-lg bg-white/15 px-3 py-1.5 text-sm font-bold">
+          <Link href="/entrar?trocar=1" className="rounded-2xl bg-white/20 px-3 py-2 text-sm font-extrabold">
             Trocar
           </Link>
           <SignOutButton label="Sair" redirectTo="/entrar" />
         </div>
       </header>
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />
-      <main className="px-4 pb-10">
+      <main className="px-4 pb-6">
         <InstallKidsApp />
         {children}
+        <div className="flex justify-center pt-8">
+          <BrandLogo size="md" wordmark={false} />
+        </div>
       </main>
     </div>
   );

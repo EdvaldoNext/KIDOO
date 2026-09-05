@@ -26,7 +26,7 @@ export default async function KidsEnterPage({
       <DevModeBanner />
       <div className="flex flex-col items-center justify-center px-4 py-10">
         <Link href="/" className="mb-8">
-          <BrandLogo size="lg" />
+          <BrandLogo size="hero" wordmark={false} />
         </Link>
         <Suspense fallback={<p className="font-bold text-navy/70">Carregando...</p>}>
           <KidsEnterFlow />

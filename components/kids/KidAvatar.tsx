@@ -3,9 +3,11 @@ const COLORS = ["bg-royal text-white", "bg-success text-navy", "bg-gold text-nav
 export function KidAvatar({
   name,
   size = "md",
+  className = "",
 }: {
   name: string;
   size?: "sm" | "md" | "lg";
+  className?: string;
 }) {
   const initials = name
     .trim()
@@ -18,7 +20,9 @@ export function KidAvatar({
     size === "lg" ? "h-20 w-20 text-3xl" : size === "sm" ? "h-10 w-10 text-sm" : "h-14 w-14 text-xl";
 
   return (
-    <span className={`grid shrink-0 place-items-center rounded-full font-extrabold ${color} ${sizeClass}`}>
+    <span
+      className={`grid shrink-0 place-items-center rounded-full font-extrabold ${color} ${sizeClass} ${className}`}
+    >
       {initials || "?"}
     </span>
   );

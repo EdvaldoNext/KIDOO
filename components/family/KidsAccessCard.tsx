@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { KIDS_ENTRY_PATH } from "@/lib/kids-access";
+import { prettyName } from "@/lib/names";
 
 export function KidsAccessCard({
   accessKey,
@@ -22,7 +23,7 @@ export function KidsAccessCard({
   return (
     <div className="rounded-2xl bg-gold/20 p-5 ring-1 ring-gold">
       <p className="font-bold">
-        {childName ? `${childName} já pode entrar` : "Acesso dos filhos"}
+        {childName ? `${prettyName(childName)} já pode entrar` : "Acesso dos filhos"}
       </p>
       <p className="mt-2 text-sm text-navy/80">
         Envie o link e a chave. A criança toca no nome dela e vê as tarefas da família.

@@ -1,5 +1,6 @@
 import { getAppContext } from "@/lib/app-context";
 import { FamilySettingsForm } from "@/components/family/FamilySettingsForm";
+import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
 
 export default async function SettingsPage() {
   const { supabase, familyId } = await getAppContext();
@@ -22,7 +23,14 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-extrabold">Configurações</h1>
+      <ParentPageHeader
+        eyebrow="Combinados da casa"
+        title="Configurações"
+        subtitle="Recompensa, nome da família e o que fazer com os dados."
+      />
+      <ParentTrustStrip aside="Você pode apagar tudo quando quiser.">
+        Fotos, local e pontos ficam só nesta família.
+      </ParentTrustStrip>
       <FamilySettingsForm family={family} />
     </div>
   );

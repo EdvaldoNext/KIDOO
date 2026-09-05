@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { KidsMascot } from "@/components/kids/KidsMascot";
 import { RejectionFeedback } from "@/components/tasks/RejectionFeedback";
 import { photoKey, STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
@@ -160,12 +161,13 @@ export function CompleteTask({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">{task.title}</h1>
+      <KidsMascot size="header" />
+      <h1 className="text-3xl font-extrabold">Missão: {task.title}</h1>
       {rejectionNote !== undefined ? <RejectionFeedback note={rejectionNote} /> : null}
       {mustPhoto ? (
-        <p className="font-bold text-navy/70">Tire uma foto para provar. Não dá para pular.</p>
+        <p className="font-extrabold text-navy/70">Manda uma foto para os pais verem. Essa não dá para pular.</p>
       ) : (
-        <p className="font-bold text-navy/70">Foto opcional neste lembrete.</p>
+        <p className="font-extrabold text-navy/70">Foto opcional neste lembrete.</p>
       )}
 
       {!photo ? (
@@ -190,20 +192,20 @@ export function CompleteTask({
 
       <div className="flex flex-col gap-3">
         {!photo ? (
-          <button onClick={capture} className="rounded-2xl bg-royal py-4 font-extrabold text-white">
+          <button onClick={capture} className="kids-pop min-h-14 rounded-2xl bg-royal py-4 font-extrabold text-white">
             Tirar foto
           </button>
         ) : (
           <>
-            <button onClick={() => setPhoto(null)} className="rounded-2xl bg-white py-4 font-extrabold ring-1 ring-navy/10">
+            <button onClick={() => setPhoto(null)} className="min-h-14 rounded-2xl bg-white py-4 font-extrabold ring-2 ring-navy/10">
               Tirar outra
             </button>
             <button
               disabled={pending}
               onClick={send}
-              className="rounded-2xl bg-success py-4 font-extrabold text-navy"
+              className="kids-pop min-h-14 rounded-2xl bg-success py-4 font-extrabold text-navy shadow-[0_4px_0_#3a9a1f]"
             >
-              {pending ? "Enviando..." : "Enviar"}
+              {pending ? "Enviando..." : "Enviar para os pais"}
             </button>
           </>
         )}
@@ -211,9 +213,9 @@ export function CompleteTask({
           <button
             disabled={pending}
             onClick={send}
-            className="rounded-2xl bg-pending py-4 font-extrabold text-navy"
+            className="kids-pop min-h-14 rounded-2xl bg-pending py-4 font-extrabold text-navy"
           >
-            Concluir sem foto
+            Já fiz, sem foto
           </button>
         ) : null}
       </div>

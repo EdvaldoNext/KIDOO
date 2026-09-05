@@ -1,5 +1,6 @@
 import { getAppContext } from "@/lib/app-context";
 import { ChildrenManager } from "@/components/family/ChildrenManager";
+import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
 
 export default async function ChildrenPage({
   searchParams,
@@ -24,18 +25,27 @@ export default async function ChildrenPage({
       : Promise.resolve({ data: null }),
   ]);
 
+  const count = children?.length ?? 0;
+  const firstTime = primeiro === "1";
+
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-extrabold">Filhos</h1>
-      {primeiro === "1" ? (
-        <p className="rounded-2xl bg-gold/30 px-4 py-3 font-semibold text-navy">
-          Família pronta. Agora cadastre o primeiro filho e envie o link com a chave.
-        </p>
-      ) : (
-        <p className="text-navy/70">
-          Uma chave para a casa. Cada filho toca no próprio nome para entrar.
-        </p>
-      )}
+      <ParentPageHeader
+        eyebrow="Quem mora aqui"
+        title="Filhos"
+        subtitle={
+          firstTime
+            ? "Família pronta. Cadastre o primeiro filho e envie o link com a chave."
+            : count === 0
+              ? "Cadastre quem vai usar o app das crianças."
+              : count === 1
+                ? "1 criança na casa. Cada uma entra pelo próprio nome."
+                : `${count} crianças na casa. Cada uma entra pelo próprio nome.`
+        }
+      />
+      <ParentTrustStrip aside="Sem e-mail nem senha para eles.">
+        Uma chave para a casa. Só quem tem o link entra.
+      </ParentTrustStrip>
       <ChildrenManager
         childrenList={children ?? []}
         kidsAccessKey={family?.kids_access_key ?? null}

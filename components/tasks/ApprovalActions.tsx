@@ -8,10 +8,12 @@ import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 export function ApprovalActions({ completionId }: { completionId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [note, setNote] = useState("");
 
   async function decide(approve: boolean) {
     setPending(true);
-    const note = approve ? null : window.prompt("Motivo da rejeição (opcional)") ?? "";
+    const rejectNote = approve ? null : note.trim() || null;
 
     if (CLIENT_DEV_BYPASS_AUTH) {
       await fetch("/api/dev/approve-completion", {
@@ -20,7 +22,7 @@ export function ApprovalActions({ completionId }: { completionId: string }) {
         body: JSON.stringify({
           completion_id: completionId,
           approve,
-          note: note || null,
+          note: rejectNote,
         }),
       });
       router.refresh();
@@ -32,27 +34,68 @@ export function ApprovalActions({ completionId }: { completionId: string }) {
     await supabase.rpc("approve_completion", {
       p_completion_id: completionId,
       p_approve: approve,
-      p_note: note || null,
+      p_note: rejectNote,
     });
     router.refresh();
     setPending(false);
   }
 
+  if (rejecting) {
+    return (
+      <div className="space-y-3 rounded-xl bg-canvas p-3">
+        <label className="block text-sm font-bold">
+          Pedido de ajuste
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={280}
+            rows={3}
+            placeholder="O que falta para ficar bom? (opcional)"
+            className="mt-1 w-full resize-y rounded-xl border border-navy/10 bg-white px-3 py-2 text-sm font-semibold outline-none ring-royal focus:ring-2"
+          />
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => void decide(false)}
+            className="rounded-xl bg-alert px-4 py-2 font-bold text-white disabled:opacity-60"
+          >
+            {pending ? "Enviando..." : "Pedir ajuste"}
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setRejecting(false);
+              setNote("");
+            }}
+            className="rounded-xl bg-white px-4 py-2 font-bold ring-1 ring-navy/10"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <button
+        type="button"
         disabled={pending}
-        onClick={() => decide(true)}
-        className="rounded-xl bg-success px-4 py-2 font-bold text-navy"
+        onClick={() => void decide(true)}
+        className="rounded-xl bg-success px-4 py-2 font-bold text-navy disabled:opacity-60"
       >
-        Aprovar
+        {pending ? "Salvando..." : "Aprovar"}
       </button>
       <button
+        type="button"
         disabled={pending}
-        onClick={() => decide(false)}
-        className="rounded-xl bg-alert px-4 py-2 font-bold text-white"
+        onClick={() => setRejecting(true)}
+        className="rounded-xl bg-alert px-4 py-2 font-bold text-white disabled:opacity-60"
       >
-        Rejeitar
+        Pedir ajuste
       </button>
     </div>
   );

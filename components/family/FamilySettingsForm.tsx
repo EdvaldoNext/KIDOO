@@ -83,6 +83,7 @@ export function FamilySettingsForm({ family }: { family: Family }) {
   return (
     <div className="max-w-lg space-y-6">
       <form action={save} className="space-y-4 rounded-2xl bg-white p-6 ring-1 ring-navy/5">
+        <h2 className="text-lg font-extrabold">A casa</h2>
         <label className="block text-sm font-semibold">
           Nome da família
           <input name="name" defaultValue={family.name} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-3" />
@@ -153,16 +154,18 @@ export function FamilySettingsForm({ family }: { family: Family }) {
       </form>
 
       <div className="rounded-2xl bg-white p-6 ring-1 ring-navy/5">
-        <p className="font-bold">Localização</p>
+        <p className="font-extrabold">Localização</p>
         <p className="mt-1 text-sm text-navy/70">
-          O GPS é capturado ao concluir uma tarefa. Veja o mapa em{" "}
-          <a href="/app/localizacao" className="font-bold text-royal underline">
-            Local
+          O GPS entra só ao concluir uma tarefa. Veja o mapa em{" "}
+          <a href="/app/localizacao" className="font-bold text-royal hover:underline">
+            Localização
           </a>{" "}
-          ou na tela de aprovação de fotos.
+          ou na aprovação de fotos.
         </p>
-        <p className="mt-2 text-xs font-bold text-navy/50">
-          Rastreamento 24h: {family.location_24h_enabled ? "ligado" : "desligado (padrão)"}
+        <p className={`mt-3 text-sm font-bold ${family.location_24h_enabled ? "text-alert" : "text-navy/55"}`}>
+          {family.location_24h_enabled
+            ? "Localização 24h ligada — o padrão do KIDOO é desligada."
+            : "Localização 24h desligada (padrão seguro)."}
         </p>
       </div>
 

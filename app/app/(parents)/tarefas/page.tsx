@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
-import { STATUS_CLASS, STATUS_LABEL } from "@/lib/status";
+import { TaskList } from "@/components/tasks/TaskList";
+import { prettyName } from "@/lib/names";
 
 export default async function TasksPage() {
   const { supabase, familyId } = await getAppContext();
 
   let tasksQuery = supabase
     .from("tasks")
-    .select("id, title, status, weight, kind, assigned_child_id")
+    .select("id, title, status, weight, kind, assigned_child_id, created_at")
     .order("created_at", { ascending: false });
 
   let childrenQuery = supabase.from("profiles").select("id, display_name").eq("role", "child");
@@ -17,29 +18,43 @@ export default async function TasksPage() {
     childrenQuery = childrenQuery.eq("family_id", familyId);
   }
 
-  const { data: tasks } = await tasksQuery;
-  const { data: children } = await childrenQuery;
-  const names = new Map((children ?? []).map((c) => [c.id, c.display_name]));
+  const [{ data: tasks }, { data: children }] = await Promise.all([tasksQuery, childrenQuery]);
+  const names = new Map((children ?? []).map((child) => [child.id, prettyName(child.display_name)]));
+
+  const items = (tasks ?? []).map((task) => ({
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    weight: task.weight,
+    kind: task.kind,
+    childName: names.get(task.assigned_child_id) ?? "Filho(a)",
+    createdAt: task.created_at,
+  }));
+
+  const waiting = items.filter((item) => item.status === "awaiting_approval").length;
+  const open = items.filter((item) => item.status === "pending" || item.status === "awaiting_approval").length;
+  const subtitle =
+    waiting > 0
+      ? `${waiting} ${waiting === 1 ? "tarefa esperando" : "tarefas esperando"} sua aprovação.`
+      : open > 0
+        ? `${open} ${open === 1 ? "tarefa aberta" : "tarefas abertas"} na casa.`
+        : items.length > 0
+          ? "Nada aberto agora. O histórico do mês continua aqui."
+          : "Crie a primeira tarefa para os filhos.";
 
   return (
     <div className="min-w-0 space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="min-w-0 text-2xl font-extrabold">Tarefas</h1>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-royal">Combinados da casa</p>
+          <h1 className="text-2xl font-extrabold">Tarefas</h1>
+          <p className="mt-1 text-navy/70">{subtitle}</p>
+        </div>
         <Link href="/app/tarefas/nova" className="shrink-0 rounded-xl bg-royal px-4 py-2 font-bold text-white">
-          Nova
+          Nova tarefa
         </Link>
       </div>
-      <div className="grid min-w-0 gap-3">
-        {(tasks ?? []).map((task) => (
-          <div key={task.id} className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-navy/5">
-            <p className="wrap-break-word font-bold">{task.title}</p>
-            <p className="text-sm text-navy/60">{names.get(task.assigned_child_id)}</p>
-            <span className={`mt-2 inline-block max-w-full wrap-break-word rounded-full px-3 py-1 text-xs font-bold ${STATUS_CLASS[task.status]}`}>
-              {STATUS_LABEL[task.status]} {task.kind === "points" ? `· ${task.weight} pts` : "· lembrete"}
-            </span>
-          </div>
-        ))}
-      </div>
+      <TaskList key={items.map((item) => item.id).join(",")} items={items} />
     </div>
   );
 }
