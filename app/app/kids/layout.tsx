@@ -1,12 +1,27 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
 import { getAppContext } from "@/lib/app-context";
 import { KidsNav } from "@/components/kids/KidsNav";
+import { InstallKidsApp } from "@/components/kids/InstallKidsApp";
+import { resolveKidsPwaIdentity } from "@/lib/kids-pwa";
 import { kidsPointsNavLabel, loadFamilyReward } from "@/lib/rewards";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { appName } = await resolveKidsPwaIdentity();
+  return {
+    title: appName,
+    appleWebApp: {
+      capable: true,
+      title: appName,
+      statusBarStyle: "default",
+    },
+  };
+}
 
 export default async function KidsLayout({
   children,
@@ -44,7 +59,10 @@ export default async function KidsLayout({
         </div>
       </header>
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />
-      <main className="px-4 pb-10">{children}</main>
+      <main className="px-4 pb-10">
+        <InstallKidsApp />
+        {children}
+      </main>
     </div>
   );
 }

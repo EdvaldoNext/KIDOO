@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
+import { DEV_COOKIE_OPTIONS } from "@/lib/dev-cookies";
 
 export async function POST() {
   if (!DEV_BYPASS_AUTH) {
@@ -34,10 +35,6 @@ export async function POST() {
   }
 
   const response = NextResponse.json({ ok: true, family_id: family.id });
-  response.cookies.set(DEV_FAMILY_COOKIE, family.id, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-  });
+  response.cookies.set(DEV_FAMILY_COOKIE, family.id, DEV_COOKIE_OPTIONS);
   return response;
 }

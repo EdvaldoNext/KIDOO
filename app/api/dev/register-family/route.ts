@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
+import { DEV_COOKIE_OPTIONS } from "@/lib/dev-cookies";
 import { generateKidsAccessKey } from "@/lib/kids-access";
 
 function alreadyExists(error: { message?: string; code?: string } | null) {
@@ -29,11 +30,7 @@ async function findUserByEmail(
 
 function withFamilyCookie(familyId: string) {
   const response = NextResponse.json({ ok: true, family_id: familyId });
-  response.cookies.set(DEV_FAMILY_COOKIE, familyId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-  });
+  response.cookies.set(DEV_FAMILY_COOKIE, familyId, DEV_COOKIE_OPTIONS);
   return response;
 }
 
