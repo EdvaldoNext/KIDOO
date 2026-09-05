@@ -1,10 +1,21 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { KidsEnterFlow } from "@/components/kids/KidsEnterFlow";
+import { hasActiveKidsSession } from "@/lib/kids-pwa";
 
-export default function KidsEnterPage() {
+export default async function KidsEnterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ trocar?: string }>;
+}) {
+  const { trocar } = await searchParams;
+  if (trocar !== "1" && (await hasActiveKidsSession())) {
+    redirect("/app/kids");
+  }
+
   return (
     <div className="min-h-full">
       <DevModeBanner />

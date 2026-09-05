@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { getAppContext } from "@/lib/app-context";
 import { KidsNav } from "@/components/kids/KidsNav";
 import { InstallKidsApp } from "@/components/kids/InstallKidsApp";
-import { resolveKidsPwaIdentity } from "@/lib/kids-pwa";
+import { KIDS_PWA_MANIFEST_PATH, resolveKidsPwaIdentity } from "@/lib/kids-pwa";
 import { kidsPointsNavLabel, loadFamilyReward } from "@/lib/rewards";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { appName } = await resolveKidsPwaIdentity();
   return {
     title: appName,
+    manifest: KIDS_PWA_MANIFEST_PATH,
     appleWebApp: {
       capable: true,
       title: appName,
