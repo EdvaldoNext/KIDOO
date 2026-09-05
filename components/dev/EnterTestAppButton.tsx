@@ -20,14 +20,25 @@ export function EnterTestAppButton({
   async function enter() {
     setPending(true);
     setError(null);
-    const response = await fetch("/api/dev/enter-test", { method: "POST" });
-    const payload = (await response.json()) as { error?: string };
-    if (!response.ok) {
-      setError(payload.error ?? "Não foi possível abrir o app de teste.");
+    try {
+      const response = await fetch("/api/dev/enter-test", { method: "POST" });
+      let payload: { error?: string } = {};
+      try {
+        payload = (await response.json()) as { error?: string };
+      } catch {
+        setError("O servidor não respondeu. Confira as variáveis do Supabase na Vercel.");
+        return;
+      }
+      if (!response.ok) {
+        setError(payload.error ?? "Não foi possível abrir o app de teste.");
+        return;
+      }
+      window.location.href = redirectTo;
+    } catch {
+      setError("Não foi possível abrir o app de teste.");
+    } finally {
       setPending(false);
-      return;
     }
-    window.location.href = redirectTo;
   }
 
   return (

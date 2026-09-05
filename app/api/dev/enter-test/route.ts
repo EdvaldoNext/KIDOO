@@ -8,7 +8,16 @@ export async function POST() {
     return NextResponse.json({ error: "Modo dev desativado." }, { status: 403 });
   }
 
-  const admin = createServiceClient();
+  let admin;
+  try {
+    admin = createServiceClient();
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Configuração do servidor incompleta." },
+      { status: 500 },
+    );
+  }
+
   const { data: family, error } = await admin
     .from("families")
     .select("id")
