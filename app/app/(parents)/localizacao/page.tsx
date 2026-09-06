@@ -73,22 +73,22 @@ export default async function LocationPage() {
         title="Localização"
         subtitle={
           locations.length === 0
-            ? "Ainda não há local registrado."
-            : "Último local de cada criança ao concluir uma tarefa."
+            ? "Ainda não há local de foto registrado."
+            : "Último local da foto de cada criança ao concluir uma tarefa."
         }
       />
       <ParentTrustStrip
         aside={
           locationOn ? (
-            <Link href="/app/configuracoes" className="font-bold text-royal hover:underline">
-              Localização 24h ligada · gerenciar
+            <Link href="/app/filhos" className="font-bold text-royal hover:underline">
+              Ver rastreador ao vivo em Filhos
             </Link>
           ) : (
             "Pode variar alguns metros dentro de casa."
           )
         }
       >
-        GPS só no momento da foto, não um rastreador o dia todo.
+        Esta tela é o GPS da foto. O rastreador ao vivo fica na aba Filhos.
       </ParentTrustStrip>
 
       {locations.length === 0 ? (

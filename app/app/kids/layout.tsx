@@ -8,6 +8,8 @@ import { KidsNav } from "@/components/kids/KidsNav";
 import { InstallKidsApp } from "@/components/kids/InstallKidsApp";
 import { KIDS_PWA_MANIFEST_PATH, resolveKidsPwaIdentity } from "@/lib/kids-pwa";
 import { kidsPointsNavLabel, loadFamilyReward } from "@/lib/rewards";
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { KidsLiveLocation } from "@/components/kids/KidsLiveLocation";
 
 export const dynamic = "force-dynamic";
 
@@ -38,9 +40,12 @@ export default async function KidsLayout({
     .order("created_at", { ascending: true });
   if (familyId) childrenQuery = childrenQuery.eq("family_id", familyId);
 
-  const [{ data: kids }, reward] = await Promise.all([
+  const [{ data: kids }, reward, familyResult] = await Promise.all([
     childrenQuery,
     loadFamilyReward(supabase, familyId),
+    familyId
+      ? supabase.from("families").select("location_24h_enabled").eq("id", familyId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const current = (kids ?? []).find((kid) => kid.id === childId);
   const headerName = current?.display_name ?? "";
@@ -67,7 +72,12 @@ export default async function KidsLayout({
       </header>
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />
       <main className="px-4 pb-6">
+        <AutoRefresh />
         <InstallKidsApp />
+        <KidsLiveLocation
+          enabled={Boolean(familyResult.data?.location_24h_enabled)}
+          childId={childId}
+        />
         {children}
         <div className="flex justify-center pt-8">
           <BrandLogo size="md" wordmark={false} />

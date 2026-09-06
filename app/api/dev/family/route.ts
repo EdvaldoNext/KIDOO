@@ -32,17 +32,22 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json()) as Record<string, unknown>;
+  const patch: Record<string, unknown> = {};
+  if (typeof body.name === "string") patch.name = body.name;
+  if (typeof body.reward_mode === "string") patch.reward_mode = body.reward_mode;
+  if ("points_per_currency" in body) patch.points_per_currency = body.points_per_currency;
+  if ("currency_amount" in body) patch.currency_amount = body.currency_amount;
+  if ("reward_note" in body) patch.reward_note = body.reward_note;
+  if (typeof body.location_24h_enabled === "boolean") {
+    patch.location_24h_enabled = body.location_24h_enabled;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: "Nada para salvar." }, { status: 400 });
+  }
+
   const admin = createServiceClient();
-  const { error } = await admin
-    .from("families")
-    .update({
-      name: body.name,
-      reward_mode: body.reward_mode,
-      points_per_currency: body.points_per_currency,
-      currency_amount: body.currency_amount,
-      reward_note: body.reward_note,
-    })
-    .eq("id", familyId);
+  const { error } = await admin.from("families").update(patch).eq("id", familyId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

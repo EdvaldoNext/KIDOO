@@ -85,11 +85,11 @@ export function ParentToday({
       <section className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-3 text-sm ring-1 ring-navy/5 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-semibold text-navy/80">Fotos e o local da tarefa ficam só na família.</p>
         {locationOn ? (
-          <Link href="/app/configuracoes" className="shrink-0 font-bold text-royal hover:underline">
-            Localização 24h ligada · gerenciar
+          <Link href="/app/filhos" className="shrink-0 font-bold text-royal hover:underline">
+            Rastreador ao vivo · abrir em Filhos
           </Link>
         ) : (
-          <p className="shrink-0 text-navy/55">GPS só na conclusão da tarefa.</p>
+          <p className="shrink-0 text-navy/55">GPS da foto na conclusão. Rastreador em Filhos, se ligado.</p>
         )}
       </section>
 

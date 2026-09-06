@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { ParentNav } from "@/components/family/ParentNav";
 import { getAppContext } from "@/lib/app-context";
 import { kidsPointsNavLabel } from "@/lib/rewards";
@@ -54,7 +55,10 @@ export default async function ParentLayout({
         </div>
         <ParentNav waitingCount={waitingCount} pointsLabel={pointsLabel} />
       </header>
-      <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">{children}</main>
+      <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">
+        <AutoRefresh />
+        {children}
+      </main>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { HelpTip } from "@/components/HelpTip";
@@ -17,6 +18,7 @@ type Family = {
 };
 
 export function FamilySettingsForm({ family }: { family: Family }) {
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [rewardMode, setRewardMode] = useState(family.reward_mode);
   const [amountInput, setAmountInput] = useState(formatMoneyInput(family.currency_amount ?? 2));
@@ -54,6 +56,28 @@ export function FamilySettingsForm({ family }: { family: Family }) {
     const supabase = createClient();
     const { error } = await supabase.from("families").update(payload).eq("id", family.id);
     setMessage(error ? error.message : "Salvo.");
+  }
+
+  async function saveLocation(formData: FormData) {
+    const enabled = formData.get("location_24h_enabled") === "on";
+    const payload = { location_24h_enabled: enabled };
+
+    if (CLIENT_DEV_BYPASS_AUTH) {
+      const response = await fetch("/api/dev/family", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json()) as { error?: string };
+      setMessage(result.error ?? (enabled ? "Rastreador ligado." : "Rastreador desligado."));
+      if (!result.error) router.refresh();
+      return;
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase.from("families").update(payload).eq("id", family.id);
+    setMessage(error ? error.message : enabled ? "Rastreador ligado." : "Rastreador desligado.");
+    if (!error) router.refresh();
   }
 
   async function wipe() {
@@ -153,21 +177,38 @@ export function FamilySettingsForm({ family }: { family: Family }) {
         {message ? <p className="text-sm font-semibold text-royal">{message}</p> : null}
       </form>
 
-      <div className="rounded-2xl bg-white p-6 ring-1 ring-navy/5">
-        <p className="font-extrabold">Localização</p>
-        <p className="mt-1 text-sm text-navy/70">
-          O GPS entra só ao concluir uma tarefa. Veja o mapa em{" "}
+      <form action={saveLocation} className="space-y-3 rounded-2xl bg-white p-6 ring-1 ring-navy/5">
+        <p className="font-extrabold">Dois tipos de localização</p>
+        <p className="text-sm text-navy/70">
+          O local da foto vai na aprovação e no{" "}
           <a href="/app/localizacao" className="font-bold text-royal hover:underline">
-            Localização
-          </a>{" "}
-          ou na aprovação de fotos.
+            histórico de tarefas
+          </a>
+          . Não é obrigatório para concluir.
         </p>
-        <p className={`mt-3 text-sm font-bold ${family.location_24h_enabled ? "text-alert" : "text-navy/55"}`}>
+        <label className="flex items-start gap-3 text-sm font-semibold">
+          <input
+            name="location_24h_enabled"
+            type="checkbox"
+            defaultChecked={family.location_24h_enabled}
+            className="mt-1 h-4 w-4 accent-royal"
+          />
+          <span>
+            Ligar rastreador ao vivo
+            <span className="mt-1 block font-medium text-navy/60">
+              Mostra a posição na aba Filhos enquanto o app da criança estiver aberto. Não substitui o GPS da
+              foto.
+            </span>
+          </span>
+        </label>
+        <button className="rounded-xl bg-royal px-4 py-2 font-bold text-white">Salvar localização</button>
+        {message ? <p className="text-sm font-semibold text-royal">{message}</p> : null}
+        <p className={`text-sm font-bold ${family.location_24h_enabled ? "text-alert" : "text-navy/55"}`}>
           {family.location_24h_enabled
-            ? "Localização 24h ligada — o padrão do KIDOO é desligada."
-            : "Localização 24h desligada (padrão seguro)."}
+            ? "Rastreador ao vivo ligado. Sem sinal se o app dos filhos estiver fechado."
+            : "Rastreador ao vivo desligado."}
         </p>
-      </div>
+      </form>
 
       <button onClick={wipe} className="text-sm font-bold text-alert">
         Excluir família e dados (LGPD)

@@ -7,6 +7,7 @@ import { KidsMascot } from "@/components/kids/KidsMascot";
 import { RejectionFeedback } from "@/components/tasks/RejectionFeedback";
 import { photoKey, STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
+import { requestBrowserPosition, type GeoResult } from "@/lib/geo";
 
 type Task = {
   id: string;
@@ -30,8 +31,23 @@ export function CompleteTask({
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [photoGeo, setPhotoGeo] = useState<GeoResult | null>(null);
+  const [photoGeoPending, setPhotoGeoPending] = useState(true);
   const mustPhoto = task.require_photo || task.kind === "points";
   const childNote = note.trim() || null;
+
+  useEffect(() => {
+    let cancelled = false;
+    setPhotoGeoPending(true);
+    void requestBrowserPosition().then((result) => {
+      if (cancelled) return;
+      setPhotoGeo(result);
+      setPhotoGeoPending(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (photo) return;
@@ -55,6 +71,21 @@ export function CompleteTask({
     const ctx = canvas.getContext("2d");
     ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
     setPhoto(canvas.toDataURL("image/jpeg", 0.72));
+    if (!photoGeo?.ok) {
+      setPhotoGeoPending(true);
+      void requestBrowserPosition().then((result) => {
+        setPhotoGeo(result);
+        setPhotoGeoPending(false);
+      });
+    }
+  }
+
+  async function refreshPhotoGeo() {
+    setPhotoGeoPending(true);
+    const result = await requestBrowserPosition();
+    setPhotoGeo(result);
+    setPhotoGeoPending(false);
+    return result;
   }
 
   async function send() {
@@ -66,20 +97,13 @@ export function CompleteTask({
     setError(null);
     const completionId = crypto.randomUUID();
     let key: string | null = null;
-    let lat: number | null = null;
-    let lng: number | null = null;
-    let locationAvailable = false;
-
-    try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
-      });
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-      locationAvailable = true;
-    } catch {
-      locationAvailable = false;
+    let geo = photoGeo;
+    if (!geo?.ok) {
+      geo = await refreshPhotoGeo();
     }
+    const lat = geo.ok ? geo.fix.lat : null;
+    const lng = geo.ok ? geo.fix.lng : null;
+    const locationAvailable = geo.ok;
 
     if (CLIENT_DEV_BYPASS_AUTH) {
       const formData = new FormData();
@@ -169,6 +193,26 @@ export function CompleteTask({
       ) : (
         <p className="font-extrabold text-navy/70">Foto opcional neste lembrete.</p>
       )}
+      <p
+        className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+          photoGeo?.ok ? "bg-success/15 text-navy" : "bg-white text-navy/70 ring-1 ring-navy/10"
+        }`}
+      >
+        {photoGeoPending
+          ? "Buscando o local da foto…"
+          : photoGeo?.ok
+            ? "Local da foto pronto — vai junto com o envio."
+            : photoGeo?.message ?? "Sem local da foto. Dá para enviar mesmo assim."}
+      </p>
+      {!photoGeoPending && photoGeo && !photoGeo.ok ? (
+        <button
+          type="button"
+          onClick={() => void refreshPhotoGeo()}
+          className="text-sm font-extrabold text-royal"
+        >
+          Tentar local de novo
+        </button>
+      ) : null}
 
       {!photo ? (
         <video ref={videoRef} autoPlay playsInline className="w-full rounded-3xl bg-navy" />

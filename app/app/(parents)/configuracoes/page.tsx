@@ -26,7 +26,7 @@ export default async function SettingsPage() {
       <ParentPageHeader
         eyebrow="Combinados da casa"
         title="Configurações"
-        subtitle="Recompensa, nome da família e o que fazer com os dados."
+        subtitle="Recompensa, rastreador ao vivo e o que fazer com os dados."
       />
       <ParentTrustStrip aside="Você pode apagar tudo quando quiser.">
         Fotos, local e pontos ficam só nesta família.

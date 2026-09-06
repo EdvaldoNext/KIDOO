@@ -7,6 +7,7 @@ import { prettyName } from "@/lib/names";
 import { HelpTip } from "@/components/HelpTip";
 import { KidAvatar } from "@/components/kids/KidAvatar";
 import { KidsAccessCard } from "@/components/family/KidsAccessCard";
+import { liveSignalLabel, liveSignalStatus, type LiveSignalStatus } from "@/lib/live-location";
 
 type Child = {
   id: string;
@@ -14,12 +15,22 @@ type Child = {
   age_group: AgeGroup | null;
 };
 
+function statusDot(status: LiveSignalStatus) {
+  if (status === "live") return "bg-success";
+  if (status === "recent") return "bg-pending";
+  return "bg-navy/25";
+}
+
 export function ChildrenManager({
   childrenList,
   kidsAccessKey,
+  locationOn = false,
+  liveCapturedAt = {},
 }: {
   childrenList: Child[];
   kidsAccessKey: string | null;
+  locationOn?: boolean;
+  liveCapturedAt?: Record<string, string>;
 }) {
   const [list, setList] = useState(childrenList);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +39,32 @@ export function ChildrenManager({
   const [pending, setPending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [liveAt, setLiveAt] = useState(liveCapturedAt);
+
+  useEffect(() => {
+    setLiveAt(liveCapturedAt);
+  }, [liveCapturedAt]);
+
+  useEffect(() => {
+    if (!locationOn) return;
+    let cancelled = false;
+
+    async function refresh() {
+      const response = await fetch("/api/family/live-location");
+      const payload = (await response.json()) as { locations?: { child_id: string; captured_at: string }[] };
+      if (cancelled || !response.ok) return;
+      const next: Record<string, string> = {};
+      for (const row of payload.locations ?? []) next[row.child_id] = row.captured_at;
+      setLiveAt(next);
+    }
+
+    void refresh();
+    const id = window.setInterval(() => void refresh(), 12000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [locationOn]);
 
   useEffect(() => {
     if (accessKey) return;
@@ -199,11 +236,24 @@ export function ChildrenManager({
               </form>
             ) : (
               <div className="flex items-center gap-3">
-                <KidAvatar name={prettyName(child.display_name)} />
-                <div className="min-w-0 flex-1">
-                  <p className="font-extrabold">{prettyName(child.display_name)}</p>
-                  <p className="text-sm text-navy/70">{ageGroupLabel(child.age_group)}</p>
-                </div>
+                <Link
+                  href={`/app/filhos/${child.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left"
+                >
+                  <KidAvatar name={prettyName(child.display_name)} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-extrabold">{prettyName(child.display_name)}</p>
+                    <p className="text-sm text-navy/70">{ageGroupLabel(child.age_group)}</p>
+                    {locationOn ? (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-navy/55">
+                        <span className={`inline-block h-2 w-2 rounded-full ${statusDot(liveSignalStatus(liveAt[child.id]))}`} />
+                        {liveSignalLabel(liveSignalStatus(liveAt[child.id]))} · ver no mapa
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs font-bold text-royal">Ver posição</p>
+                    )}
+                  </div>
+                </Link>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
