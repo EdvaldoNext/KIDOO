@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { EnterTestAppButton } from "@/components/dev/EnterTestAppButton";
+import { KidsPhoneSetup } from "@/components/kids/KidsPhoneSetup";
 import { KidAvatar } from "@/components/kids/KidAvatar";
 import { KIDS_KEY_PATTERN, normalizeKidsAccessKey, type KidsDoorChild } from "@/lib/kids-access";
 
@@ -90,6 +91,7 @@ export function KidsEnterFlow() {
 
   return (
     <div className="w-full max-w-md space-y-6">
+      <KidsPhoneSetup />
       {step === "key" ? (
         <form onSubmit={submitKey} className="space-y-4 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-navy/5 sm:p-8">
           <h1 className="text-2xl font-extrabold">Entrar nas tarefas</h1>

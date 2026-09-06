@@ -73,7 +73,7 @@ export default async function KidsLayout({
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />
       <main className="px-4 pb-6">
         <AutoRefresh />
-        <InstallKidsApp />
+        <InstallKidsApp required={Boolean(familyResult.data?.location_24h_enabled)} />
         <KidsLiveLocation
           enabled={Boolean(familyResult.data?.location_24h_enabled)}
           childId={childId}

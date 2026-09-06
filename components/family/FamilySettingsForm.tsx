@@ -196,8 +196,8 @@ export function FamilySettingsForm({ family }: { family: Family }) {
           <span>
             Ligar rastreador ao vivo
             <span className="mt-1 block font-medium text-navy/60">
-              Mostra a posição na aba Filhos enquanto o app da criança estiver aberto. Não substitui o GPS da
-              foto.
+              No app Android KIDOO Filhos, envia a posição mesmo com o app fechado. No navegador, só com a
+              página aberta. Não substitui o GPS da foto.
             </span>
           </span>
         </label>

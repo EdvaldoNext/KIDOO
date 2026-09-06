@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         source: "/kids.webmanifest",
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
+      {
+        source: "/:path*",
+        headers: [{ key: "Permissions-Policy", value: "geolocation=(self), camera=(self)" }],
+      },
     ];
   },
 };

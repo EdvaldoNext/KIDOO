@@ -45,14 +45,14 @@ export default async function ChildLivePage({
       <ParentPageHeader
         eyebrow="Rastreador ao vivo"
         title={childName}
-        subtitle="Posição atual do app dos filhos — não é o local da última foto."
+        subtitle="Posição atual do app Android dos filhos — não é o local da última foto."
         action={
           <Link href="/app/filhos" className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-royal ring-1 ring-navy/10">
             Voltar
           </Link>
         }
       />
-      <ParentTrustStrip aside="O sinal some se o app estiver fechado.">
+      <ParentTrustStrip aside="No Android, o sinal continua com o app fechado.">
         Clique em outro filho na lista para trocar o mapa.
       </ParentTrustStrip>
       <ChildLiveTracker

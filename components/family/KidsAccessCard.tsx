@@ -26,7 +26,9 @@ export function KidsAccessCard({
         {childName ? `${prettyName(childName)} já pode entrar` : "Acesso dos filhos"}
       </p>
       <p className="mt-2 text-sm text-navy/80">
-        Envie o link e a chave. A criança toca no nome dela e vê as tarefas da família.
+        Abra este link no celular Android do filho. Lá ela toca em{" "}
+        <strong>Instalar e permitir localização</strong>. O Android pede a permissão e o ícone fica no
+        telefone — sem computador.
       </p>
       <p className="mt-3 font-mono text-lg font-extrabold tracking-wide text-navy">{accessKey}</p>
       <div className="mt-3 flex flex-wrap gap-2">

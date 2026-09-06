@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { getAppContext } from "@/lib/app-context";
+import { createServiceClient } from "@/utils/supabase/admin";
 import type { LiveLocationRow } from "@/lib/live-location";
+import {
+  hashLocationToken,
+  parseLiveCoordinates,
+  upsertLiveLocation,
+} from "@/lib/live-location-server";
 
-function asOptionalNumber(value: unknown) {
-  if (value == null || value === "") return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+function bearerToken(request: Request) {
+  const header = request.headers.get("authorization") ?? "";
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+  return match?.[1]?.trim() || null;
 }
 
 export async function GET(request: Request) {
@@ -38,7 +44,49 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { supabase, familyId, childId } = await getAppContext();
+  const body = (await request.json()) as Record<string, unknown>;
+  const coords = parseLiveCoordinates(body);
+  if ("error" in coords) {
+    return NextResponse.json({ error: coords.error }, { status: 400 });
+  }
+
+  const token = bearerToken(request);
+  const source = token ? "native_background" : "pwa_foreground";
+
+  let familyId: string | null = null;
+  let childId: string | null = null;
+  let supabase;
+
+  if (token) {
+    const admin = createServiceClient();
+    const tokenHash = hashLocationToken(token);
+    const { data: row } = await admin
+      .from("child_location_tokens")
+      .select("child_id, family_id")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+
+    if (!row) {
+      return NextResponse.json({ error: "Token de localização inválido." }, { status: 401 });
+    }
+
+    familyId = row.family_id;
+    childId = row.child_id;
+    supabase = admin;
+    await admin
+      .from("child_location_tokens")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("token_hash", tokenHash);
+  } else {
+    const context = await getAppContext();
+    supabase = context.supabase;
+    familyId = context.familyId;
+    childId = context.childId;
+    if (!familyId || !childId) {
+      return NextResponse.json({ error: "Entre como a criança para compartilhar o local." }, { status: 403 });
+    }
+  }
+
   if (!familyId || !childId) {
     return NextResponse.json({ error: "Entre como a criança para compartilhar o local." }, { status: 403 });
   }
@@ -53,34 +101,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Rastreador desligado." }, { status: 403 });
   }
 
-  const body = (await request.json()) as Record<string, unknown>;
-  const lat = Number(body.lat);
-  const lng = Number(body.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    return NextResponse.json({ error: "Coordenadas inválidas." }, { status: 400 });
-  }
-  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-    return NextResponse.json({ error: "Coordenadas inválidas." }, { status: 400 });
-  }
-
-  const row = {
-    child_id: childId,
-    family_id: familyId,
-    lat,
-    lng,
-    accuracy_m: asOptionalNumber(body.accuracy_m),
-    heading: asOptionalNumber(body.heading),
-    speed_mps: asOptionalNumber(body.speed_mps),
-    captured_at: new Date().toISOString(),
-    sharing: true,
-    source: "pwa_foreground" as const,
-  };
-
-  const { data, error } = await supabase
-    .from("child_live_locations")
-    .upsert(row, { onConflict: "child_id" })
-    .select("child_id, family_id, lat, lng, accuracy_m, heading, speed_mps, captured_at, sharing, source")
-    .maybeSingle();
+  const { data, error } = await upsertLiveLocation(supabase, {
+    childId,
+    familyId,
+    ...coords,
+    source,
+  });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

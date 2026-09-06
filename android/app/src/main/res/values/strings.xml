@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KIDOO Filhos</string>
+    <string name="title_activity_main">KIDOO Filhos</string>
+    <string name="package_name">app.kidoo.kids</string>
+    <string name="custom_url_scheme">app.kidoo.kids</string>
+</resources>

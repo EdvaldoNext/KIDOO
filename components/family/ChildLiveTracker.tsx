@@ -58,8 +58,8 @@ export function ChildLiveTracker({
       <div className="rounded-2xl bg-white p-6 ring-1 ring-navy/5">
         <p className="font-extrabold">Rastreador desligado</p>
         <p className="mt-2 text-sm text-navy/70">
-          Ligue em Configurações para ver {childName} enquanto o app dos filhos estiver aberto. O local da
-          foto continua separado, na aprovação e no histórico.
+          Ligue em Configurações e peça para {childName} entrar no app Android KIDOO Filhos. O local da foto
+          continua separado, na aprovação e no histórico.
         </p>
         <Link href="/app/configuracoes" className="mt-4 inline-block font-bold text-royal hover:underline">
           Abrir configurações
@@ -81,7 +81,8 @@ export function ChildLiveTracker({
       ) : (
         <div className="grid h-72 place-items-center bg-canvas px-6 text-center sm:h-96">
           <p className="font-bold text-navy/60">
-            Sem sinal ainda. Peça para {childName} deixar o KIDOO aberto no celular.
+            Sem sinal ainda. No celular Android, {childName} precisa abrir o app KIDOO Filhos e permitir
+            localização o tempo todo.
           </p>
         </div>
       )}

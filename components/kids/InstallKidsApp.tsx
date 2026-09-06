@@ -1,11 +1,5 @@
-import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
+import { KidsPhoneSetup } from "@/components/kids/KidsPhoneSetup";
 
-export function InstallKidsApp() {
-  return (
-    <InstallAppPrompt
-      dismissKey="kidoo-install-dismissed"
-      title="Coloque o KIDOO na tela inicial"
-      description="Assim você abre direto nas suas tarefas, sem digitar a chave de novo."
-    />
-  );
+export function InstallKidsApp({ required = false }: { required?: boolean }) {
+  return <KidsPhoneSetup required={required} />;
 }

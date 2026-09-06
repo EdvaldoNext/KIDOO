@@ -40,9 +40,21 @@ export function readGeoFix(coords: GeolocationCoordinates): GeoFix {
   };
 }
 
+export async function queryGeoPermission(): Promise<"granted" | "denied" | "prompt" | "unknown"> {
+  try {
+    const status = await navigator.permissions.query({ name: "geolocation" });
+    return status.state;
+  } catch {
+    return "unknown";
+  }
+}
+
 function mapGeoError(error: GeolocationPositionError): GeoFailure {
   if (error.code === error.PERMISSION_DENIED) {
-    return failure("denied", "Permita a localização no cadeado do navegador.");
+    return failure(
+      "denied",
+      "Toque em Permitir quando o celular perguntar. Se não perguntar, toque no ícone ao lado do endereço e ative Localização.",
+    );
   }
   if (error.code === error.POSITION_UNAVAILABLE) {
     return failure("unavailable", "GPS indisponível agora. A foto vai mesmo assim.");
