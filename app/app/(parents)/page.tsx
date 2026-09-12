@@ -3,6 +3,8 @@ import { getAppContext } from "@/lib/app-context";
 import { FirstSteps } from "@/components/family/FirstSteps";
 import { InstallParentApp } from "@/components/family/InstallParentApp";
 import { ParentToday } from "@/components/family/ParentToday";
+import { sumPaid } from "@/lib/allowance";
+import { currentScorePeriod } from "@/lib/dates";
 import { loadFamilyReward } from "@/lib/rewards";
 
 export default async function ParentHomePage() {
@@ -19,8 +21,8 @@ export default async function ParentHomePage() {
     );
   }
 
-  const now = new Date();
-  const [tasksResult, childrenResult, familyResult, scoresResult, reward] = await Promise.all([
+  const { year, month } = currentScorePeriod();
+  const [tasksResult, childrenResult, familyResult, scoresResult, payoutsResult, reward] = await Promise.all([
     supabase
       .from("tasks")
       .select("id, title, status, weight, kind, assigned_child_id")
@@ -33,14 +35,21 @@ export default async function ParentHomePage() {
       .from("monthly_scores")
       .select("balance")
       .eq("family_id", familyId)
-      .eq("year", now.getFullYear())
-      .eq("month", now.getMonth() + 1),
+      .eq("year", year)
+      .eq("month", month),
+    supabase
+      .from("allowance_payouts")
+      .select("child_id, amount")
+      .eq("family_id", familyId)
+      .eq("year", year)
+      .eq("month", month),
     loadFamilyReward(supabase, familyId),
   ]);
 
   const tasks = tasksResult.data ?? [];
   const children = childrenResult.data ?? [];
   const monthPoints = (scoresResult.data ?? []).reduce((sum, row) => sum + Number(row.balance ?? 0), 0);
+  const monthPaid = sumPaid(payoutsResult.data);
 
   return (
     <div className="space-y-6">
@@ -50,6 +59,7 @@ export default async function ParentHomePage() {
         childrenList={children}
         tasks={tasks}
         monthPoints={monthPoints}
+        monthPaid={monthPaid}
         reward={reward}
         locationOn={Boolean(familyResult.data?.location_24h_enabled)}
       >

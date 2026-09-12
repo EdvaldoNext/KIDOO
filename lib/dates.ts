@@ -8,6 +8,10 @@ export function currentMonthKey() {
   return monthKey(new Date()) ?? "";
 }
 
+export function currentScorePeriod(now = new Date()) {
+  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+}
+
 export function monthLabel(key: string) {
   const [year, month] = key.split("-").map(Number);
   if (!year || !month) return key;

@@ -10,7 +10,8 @@ export default function TermsPage() {
       <p>
         O KIDOO é um aplicativo familiar para organizar tarefas domésticas com
         prova em foto. Pais criam tarefas; filhos concluem. Pontos e recompensas
-        são definidos pela família. Pagamentos de mesada acontecem fora do app.
+        são definidos pela família. O dinheiro da mesada é entregue fora do app;
+        o KIDOO só registra quando ela já foi paga, sem apagar o total do mês.
       </p>
       <p>Contas de filhos são vinculadas à família e não possuem faturamento próprio.</p>
       <p>O painel /admin é exclusivo da operação da plataforma e não faz parte do produto da família.</p>

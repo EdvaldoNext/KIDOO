@@ -3,17 +3,19 @@ import { getAppContext } from "@/lib/app-context";
 import { KidsMascot } from "@/components/kids/KidsMascot";
 import { KidsRallyNudge } from "@/components/kids/KidsRallyNudge";
 import { KidsScoreboard } from "@/components/kids/KidsScoreboard";
+import { paidByChild } from "@/lib/allowance";
+import { currentScorePeriod } from "@/lib/dates";
 import { isAllowanceMoney, kidsPointsTitle, loadFamilyReward } from "@/lib/rewards";
 
 export default async function KidsPointsPage() {
   const { supabase, familyId, childId, devMode } = await getAppContext();
-  const now = new Date();
+  const { year, month } = currentScorePeriod();
 
   let scoresQuery = supabase
     .from("monthly_scores")
     .select("child_id, credits, debits, balance")
-    .eq("year", now.getFullYear())
-    .eq("month", now.getMonth() + 1);
+    .eq("year", year)
+    .eq("month", month);
 
   let childrenQuery = supabase
     .from("profiles")
@@ -26,16 +28,20 @@ export default async function KidsPointsPage() {
     .select("assigned_child_id, weight, kind")
     .in("status", ["pending", "awaiting_approval"]);
 
+  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, amount").eq("year", year).eq("month", month);
+
   if (familyId) {
     scoresQuery = scoresQuery.eq("family_id", familyId);
     childrenQuery = childrenQuery.eq("family_id", familyId);
     tasksQuery = tasksQuery.eq("family_id", familyId);
+    payoutsQuery = payoutsQuery.eq("family_id", familyId);
   }
 
-  const [{ data: scores }, { data: kids }, { data: tasks }, reward] = await Promise.all([
+  const [{ data: scores }, { data: kids }, { data: tasks }, { data: payouts }, reward] = await Promise.all([
     scoresQuery,
     childrenQuery,
     tasksQuery,
+    payoutsQuery,
     loadFamilyReward(supabase, familyId),
   ]);
 
@@ -58,6 +64,11 @@ export default async function KidsPointsPage() {
           <BrandLogo size="header" wordmark={false} />
           <h2 className="text-lg font-extrabold sm:text-xl">{title}</h2>
         </div>
+        {isAllowanceMoney(reward) ? (
+          <p className="text-sm font-bold text-navy/70">
+            O total do mês continua mesmo depois de receber. Só muda o que já foi pago.
+          </p>
+        ) : null}
         {(kids ?? []).length === 0 ? (
           <div className="rounded-3xl bg-white p-6">
             <KidsMascot
@@ -70,6 +81,7 @@ export default async function KidsPointsPage() {
             kids={kids ?? []}
             scores={scores ?? []}
             pendingByChild={pendingByChild}
+            paidByChild={paidByChild(payouts)}
             size="large"
             reward={reward}
             currentKidId={childId}

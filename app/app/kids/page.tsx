@@ -1,11 +1,16 @@
+import Link from "next/link";
+import { AllowanceStatus } from "@/components/family/AllowanceStatus";
 import { KidsChildMissions } from "@/components/kids/KidsTaskCard";
 import { KidsMascot } from "@/components/kids/KidsMascot";
 import { latestRejectionByTask } from "@/components/tasks/RejectionFeedback";
 import { getAppContext } from "@/lib/app-context";
-import { loadFamilyReward } from "@/lib/rewards";
+import { allowanceSnapshot, paidByChild } from "@/lib/allowance";
+import { currentScorePeriod } from "@/lib/dates";
+import { formatRewardAmount, isAllowanceMoney, loadFamilyReward } from "@/lib/rewards";
 
 export default async function KidsHomePage() {
   const { supabase, familyId, childId, devMode } = await getAppContext();
+  const { year, month } = currentScorePeriod();
 
   let tasksQuery = supabase
     .from("tasks")
@@ -19,14 +24,21 @@ export default async function KidsHomePage() {
     .eq("role", "child")
     .order("created_at", { ascending: true });
 
+  let scoresQuery = supabase.from("monthly_scores").select("child_id, balance").eq("year", year).eq("month", month);
+  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, amount").eq("year", year).eq("month", month);
+
   if (familyId) {
     tasksQuery = tasksQuery.eq("family_id", familyId);
     childrenQuery = childrenQuery.eq("family_id", familyId);
+    scoresQuery = scoresQuery.eq("family_id", familyId);
+    payoutsQuery = payoutsQuery.eq("family_id", familyId);
   }
 
-  const [{ data: tasks }, { data: children }, reward] = await Promise.all([
+  const [{ data: tasks }, { data: children }, { data: scores }, { data: payouts }, reward] = await Promise.all([
     tasksQuery,
     childrenQuery,
+    scoresQuery,
+    payoutsQuery,
     loadFamilyReward(supabase, familyId),
   ]);
   const kids = children ?? [];
@@ -55,6 +67,11 @@ export default async function KidsHomePage() {
     ...kids.filter((kid) => kid.id === childId),
     ...kids.filter((kid) => kid.id !== childId),
   ];
+  const money = isAllowanceMoney(reward);
+  const focusKid = kids.find((kid) => kid.id === childId) ?? kids[0];
+  const focusScore = (scores ?? []).find((row) => row.child_id === focusKid?.id);
+  const focusSnapshot =
+    money && focusKid ? allowanceSnapshot(focusScore?.balance ?? 0, paidByChild(payouts)[focusKid.id] ?? 0, reward) : null;
 
   return (
     <div className="space-y-6">
@@ -64,6 +81,14 @@ export default async function KidsHomePage() {
         </div>
       ) : (
         <section className="space-y-4">
+          {focusKid && focusSnapshot ? (
+            <Link href="/app/kids/pontos" className="kids-pop block rounded-3xl bg-white p-4 ring-2 ring-navy/10">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-navy/50">Sua mesada</p>
+              <p className="mt-1 text-3xl font-extrabold leading-none">{formatRewardAmount(focusScore?.balance ?? 0, reward)}</p>
+              <p className="mt-1 font-bold text-navy/70">total do mês</p>
+              <AllowanceStatus snapshot={focusSnapshot} voice="child" size="compact" />
+            </Link>
+          ) : null}
           <h2 className="text-lg font-extrabold sm:text-xl">
             {manyKids ? "Missões da família" : "Suas missões"}
           </h2>

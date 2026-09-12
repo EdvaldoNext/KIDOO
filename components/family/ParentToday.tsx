@@ -3,7 +3,8 @@ import Link from "next/link";
 import { KidAvatar } from "@/components/kids/KidAvatar";
 import { STATUS_CLASS, STATUS_LABEL } from "@/lib/status";
 import { prettyName } from "@/lib/names";
-import { formatRewardAmountWithUnit, type FamilyReward } from "@/lib/rewards";
+import { allowanceSnapshot, formatAllowanceMoney } from "@/lib/allowance";
+import { formatRewardAmountWithUnit, isAllowanceMoney, type FamilyReward } from "@/lib/rewards";
 
 type TodayTask = {
   id: string;
@@ -62,6 +63,7 @@ export function ParentToday({
   childrenList,
   tasks,
   monthPoints,
+  monthPaid = 0,
   reward,
   locationOn,
   children,
@@ -70,6 +72,7 @@ export function ParentToday({
   childrenList: TodayChild[];
   tasks: TodayTask[];
   monthPoints: number;
+  monthPaid?: number;
   reward: FamilyReward | null;
   locationOn: boolean;
   children?: ReactNode;
@@ -77,8 +80,16 @@ export function ParentToday({
   const names = new Map(childrenList.map((child) => [child.id, prettyName(child.display_name)]));
   const waiting = tasks.filter((task) => task.status === "awaiting_approval").length;
   const pending = tasks.filter((task) => task.status === "pending").length;
-  const rewardHint =
-    reward?.reward_mode === "allowance" ? "mesada do mês" : reward?.reward_mode === "symbolic" ? "combinado da casa" : "pontos do mês";
+  const money = isAllowanceMoney(reward);
+  const allowance = money ? allowanceSnapshot(monthPoints, monthPaid, reward) : null;
+  const rewardHint = money ? "mesada do mês" : reward?.reward_mode === "symbolic" ? "combinado da casa" : "pontos do mês";
+  const allowanceHint = allowance
+    ? allowance.settled
+      ? "Tudo em dia"
+      : allowance.due > 0
+        ? `${formatAllowanceMoney(allowance.due)} a pagar`
+        : "Nada a pagar ainda"
+    : rewardHint;
 
   return (
     <div className="space-y-6">
@@ -130,7 +141,10 @@ export function ParentToday({
           <p className="mt-1 text-3xl font-extrabold leading-none">
             {formatRewardAmountWithUnit(monthPoints, reward)}
           </p>
-          <p className="mt-2 text-sm font-semibold text-navy/65">{rewardHint}</p>
+          <p className="mt-2 text-sm font-semibold text-navy/65">{allowanceHint}</p>
+          {allowance?.hasPaid ? (
+            <p className="mt-1 text-xs font-bold text-navy/55">Pago {formatAllowanceMoney(allowance.paid)}</p>
+          ) : null}
         </Link>
       </div>
 
