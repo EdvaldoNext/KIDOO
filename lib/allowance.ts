@@ -18,7 +18,7 @@ export type AllowanceSnapshot = {
   paidRatio: number;
 };
 
-export function moneyCents(value: number | string | null | undefined) {
+export function moneyCents(value: unknown) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return 0;
   return Math.round(amount * 100);
