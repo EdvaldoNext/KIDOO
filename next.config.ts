@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
       {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
+      },
+      {
         source: "/:path*",
         headers: [{ key: "Permissions-Policy", value: "geolocation=(self), camera=(self)" }],
       },

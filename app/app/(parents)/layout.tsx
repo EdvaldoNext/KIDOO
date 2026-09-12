@@ -4,6 +4,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { ParentPushSetup } from "@/components/pwa/ParentPushSetup";
 import { ParentNav } from "@/components/family/ParentNav";
 import { getAppContext } from "@/lib/app-context";
 import { kidsPointsNavLabel } from "@/lib/rewards";
@@ -57,6 +58,7 @@ export default async function ParentLayout({
       </header>
       <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">
         <AutoRefresh />
+        <ParentPushSetup />
         {children}
       </main>
     </div>
