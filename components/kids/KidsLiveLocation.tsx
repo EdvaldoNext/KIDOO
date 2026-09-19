@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LIVE_GEO_OPTIONS, queryGeoPermission, watchBrowserPosition, type GeoFailure } from "@/lib/geo";
+import { sendThisPhoneLocation } from "@/lib/kids-phone-location";
 import { shouldPublishLiveFix } from "@/lib/live-location";
 import { KidooLocation, isNativeAndroid } from "@/lib/native-location";
 
@@ -39,6 +40,7 @@ export function KidsLiveLocation({
       return;
     }
 
+    lastSent.current = null;
     let cancelled = false;
 
     if (isNativeAndroid()) {
@@ -70,29 +72,30 @@ export function KidsLiveLocation({
           setMessage(error instanceof Error ? error.message : "Toque em Permitir localização.");
         }
       })();
-
-      return () => {
-        cancelled = true;
-      };
+    } else {
+      void queryGeoPermission().then((state) => {
+        if (cancelled) return;
+        if (state === "denied") {
+          setWatching(false);
+          setNeedsPermission(true);
+          setMessage(
+            "O Chrome bloqueou o GPS. Toque no ícone ao lado do endereço → Permissões → Localização → Permitir. Depois toque no botão abaixo.",
+          );
+          return;
+        }
+        beginWatch();
+      });
     }
 
-    void queryGeoPermission().then((state) => {
-      if (cancelled) return;
-      if (state === "granted") {
-        beginWatch();
-        return;
-      }
-      setWatching(false);
-      setNeedsPermission(true);
-      setMessage(
-        state === "denied"
-          ? "O Chrome bloqueou o GPS. Toque no ícone ao lado do endereço → Permissões → Localização → Permitir. Depois toque no botão abaixo."
-          : "Toque no botão. O celular vai perguntar se o KIDOO pode usar a localização. Toque em Permitir.",
-      );
-    });
+    function onVisible() {
+      if (cancelled || document.visibilityState !== "visible") return;
+      void sendThisPhoneLocation();
+    }
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [enabled, childId]);
 

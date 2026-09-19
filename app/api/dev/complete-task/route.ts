@@ -28,8 +28,11 @@ export async function POST(request: Request) {
   }
 
   const selectedChildId = (await cookies()).get(DEV_CHILD_COOKIE)?.value;
-  if (selectedChildId && selectedChildId !== childId) {
-    return NextResponse.json({ error: "Essa tarefa é de outro filho." }, { status: 403 });
+  if (!selectedChildId || selectedChildId !== childId) {
+    return NextResponse.json(
+      { error: "Entre com a chave da casa e toque no seu nome para enviar esta missão." },
+      { status: 403 },
+    );
   }
 
   const admin = createServiceClient();

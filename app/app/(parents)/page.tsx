@@ -30,7 +30,7 @@ export default async function ParentHomePage() {
       .in("status", ["pending", "awaiting_approval"])
       .order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, display_name").eq("role", "child").eq("family_id", familyId),
-    supabase.from("families").select("name, location_24h_enabled").eq("id", familyId).maybeSingle(),
+    supabase.from("families").select("name").eq("id", familyId).maybeSingle(),
     supabase
       .from("monthly_scores")
       .select("balance")
@@ -61,7 +61,7 @@ export default async function ParentHomePage() {
         monthPoints={monthPoints}
         monthPaid={monthPaid}
         reward={reward}
-        locationOn={Boolean(familyResult.data?.location_24h_enabled)}
+        locationOn
       >
         <FirstSteps childCount={children.length} openTaskCount={tasks.length} />
       </ParentToday>

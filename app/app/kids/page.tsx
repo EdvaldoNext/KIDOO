@@ -9,7 +9,7 @@ import { currentScorePeriod } from "@/lib/dates";
 import { formatRewardAmount, isAllowanceMoney, loadFamilyReward } from "@/lib/rewards";
 
 export default async function KidsHomePage() {
-  const { supabase, familyId, childId, devMode } = await getAppContext();
+  const { supabase, familyId, childId } = await getAppContext();
   const { year, month } = currentScorePeriod();
 
   let tasksQuery = supabase
@@ -61,14 +61,14 @@ export default async function KidsHomePage() {
     rejectionsByTask = latestRejectionByTask(rejections ?? []);
   }
 
-  const canView = devMode || Boolean(childId);
+  const canView = Boolean(childId);
   const manyKids = kids.length > 1;
   const orderedKids = [
     ...kids.filter((kid) => kid.id === childId),
     ...kids.filter((kid) => kid.id !== childId),
   ];
   const money = isAllowanceMoney(reward);
-  const focusKid = kids.find((kid) => kid.id === childId) ?? kids[0];
+  const focusKid = kids.find((kid) => kid.id === childId) ?? null;
   const focusScore = (scores ?? []).find((row) => row.child_id === focusKid?.id);
   const focusSnapshot =
     money && focusKid ? allowanceSnapshot(focusScore?.balance ?? 0, paidByChild(payouts)[focusKid.id] ?? 0, reward) : null;
@@ -110,7 +110,7 @@ export default async function KidsHomePage() {
           ) : (
             <KidsChildMissions
               kid={kids[0]}
-              isYou={!childId || kids[0].id === childId}
+              isYou={kids[0].id === childId}
               tasks={openTasks}
               reward={reward}
               rejectionsByTask={rejectionsByTask}

@@ -21,11 +21,8 @@ export default async function ChildLivePage({
     .eq("role", "child");
   if (familyId) childQuery = childQuery.eq("family_id", familyId);
 
-  const [{ data: child }, familyResult, liveResult] = await Promise.all([
+  const [{ data: child }, liveResult] = await Promise.all([
     childQuery.maybeSingle(),
-    familyId
-      ? supabase.from("families").select("location_24h_enabled").eq("id", familyId).maybeSingle()
-      : Promise.resolve({ data: null }),
     familyId
       ? supabase
           .from("child_live_locations")
@@ -58,7 +55,7 @@ export default async function ChildLivePage({
       <ChildLiveTracker
         childId={child.id}
         childName={childName}
-        locationOn={Boolean(familyResult.data?.location_24h_enabled)}
+        locationOn
         initial={(liveResult.data as LiveLocationRow | null) ?? null}
       />
     </div>

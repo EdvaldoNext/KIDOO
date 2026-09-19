@@ -41,7 +41,7 @@ async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null
   const cookieStore = await cookies();
   const selectedChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
 
-  const [{ data: parents }, { data: selectedChild }, { data: children }] = await Promise.all([
+  const [{ data: parents }, { data: selectedChild }] = await Promise.all([
     admin
       .from("profiles")
       .select("id")
@@ -58,18 +58,11 @@ async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null
           .eq("role", "child")
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    admin
-      .from("profiles")
-      .select("id")
-      .eq("family_id", familyId)
-      .eq("role", "child")
-      .order("created_at", { ascending: true })
-      .limit(1),
   ]);
 
   return {
     ownerId: parents?.[0]?.id ?? null,
-    childId: selectedChild?.id ?? children?.[0]?.id ?? null,
+    childId: selectedChild?.id ?? null,
   };
 }
 

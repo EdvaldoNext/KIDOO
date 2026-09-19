@@ -40,12 +40,9 @@ export default async function KidsLayout({
     .order("created_at", { ascending: true });
   if (familyId) childrenQuery = childrenQuery.eq("family_id", familyId);
 
-  const [{ data: kids }, reward, familyResult] = await Promise.all([
+  const [{ data: kids }, reward] = await Promise.all([
     childrenQuery,
     loadFamilyReward(supabase, familyId),
-    familyId
-      ? supabase.from("families").select("location_24h_enabled").eq("id", familyId).maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
   const current = (kids ?? []).find((kid) => kid.id === childId);
   const headerName = current?.display_name ?? "";
@@ -73,11 +70,8 @@ export default async function KidsLayout({
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />
       <main className="px-4 pb-6">
         <AutoRefresh />
-        <InstallKidsApp required={Boolean(familyResult.data?.location_24h_enabled)} />
-        <KidsLiveLocation
-          enabled={Boolean(familyResult.data?.location_24h_enabled)}
-          childId={childId}
-        />
+        <InstallKidsApp required={Boolean(childId)} />
+        <KidsLiveLocation enabled={Boolean(childId)} childId={childId} />
         {children}
         <div className="flex justify-center pt-8">
           <BrandLogo size="md" wordmark={false} />

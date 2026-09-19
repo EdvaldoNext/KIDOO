@@ -9,6 +9,7 @@ import {
   type LiveLocationRow,
   type LiveSignalStatus,
 } from "@/lib/live-location";
+import { useFamilyLiveLocations } from "@/lib/use-family-live-locations";
 
 function statusTone(status: LiveSignalStatus) {
   if (status === "live") return "bg-success/15 text-navy";
@@ -27,31 +28,15 @@ export function ChildLiveTracker({
   locationOn: boolean;
   initial: LiveLocationRow | null;
 }) {
-  const [live, setLive] = useState<LiveLocationRow | null>(initial);
+  const rows = useFamilyLiveLocations(childId, initial ? [initial] : []);
+  const live = rows[0] ?? initial;
   const [now, setNow] = useState(Date.now());
   const status = liveSignalStatus(live?.captured_at, now);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function refresh() {
-      const response = await fetch(`/api/family/live-location?childId=${encodeURIComponent(childId)}`);
-      const payload = (await response.json()) as { locations?: LiveLocationRow[] };
-      if (cancelled) return;
-      setLive(payload.locations?.[0] ?? null);
-      setNow(Date.now());
-    }
-
-    void refresh();
-    const poll = window.setInterval(() => void refresh(), 8000);
     const tick = window.setInterval(() => setNow(Date.now()), 5000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(poll);
-      window.clearInterval(tick);
-    };
-  }, [childId]);
+    return () => window.clearInterval(tick);
+  }, []);
 
   if (!locationOn) {
     return (

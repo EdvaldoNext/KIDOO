@@ -21,7 +21,7 @@ export default async function ChildrenPage({
   const [{ data: children }, { data: family }, liveResult] = await Promise.all([
     childrenQuery,
     familyId
-      ? supabase.from("families").select("kids_access_key, location_24h_enabled").eq("id", familyId).maybeSingle()
+      ? supabase.from("families").select("kids_access_key").eq("id", familyId).maybeSingle()
       : Promise.resolve({ data: null }),
     familyId
       ? supabase.from("child_live_locations").select("child_id, captured_at").eq("family_id", familyId)
@@ -57,7 +57,7 @@ export default async function ChildrenPage({
       <ChildrenManager
         childrenList={children ?? []}
         kidsAccessKey={family?.kids_access_key ?? null}
-        locationOn={Boolean(family?.location_24h_enabled)}
+        locationOn
         liveCapturedAt={liveCapturedAt}
       />
     </div>

@@ -6,6 +6,7 @@ import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { EnterTestAppButton } from "@/components/dev/EnterTestAppButton";
 import { KidsPhoneSetup } from "@/components/kids/KidsPhoneSetup";
 import { KidAvatar } from "@/components/kids/KidAvatar";
+import { sendThisPhoneLocation } from "@/lib/kids-phone-location";
 import { KIDS_KEY_PATTERN, normalizeKidsAccessKey, type KidsDoorChild } from "@/lib/kids-access";
 
 export function KidsEnterFlow() {
@@ -86,6 +87,7 @@ export function KidsEnterFlow() {
       setPending(false);
       return;
     }
+    await sendThisPhoneLocation();
     window.location.href = "/app/kids";
   }
 

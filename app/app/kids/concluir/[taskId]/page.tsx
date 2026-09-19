@@ -23,7 +23,7 @@ export default async function CompletePage({
 
   if (!task || task.status !== "pending") notFound();
 
-  if (childId && task.assigned_child_id !== childId) {
+  if (!childId || task.assigned_child_id !== childId) {
     const { data: owner } = await supabase
       .from("profiles")
       .select("display_name")

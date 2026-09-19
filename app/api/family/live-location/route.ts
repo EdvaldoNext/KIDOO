@@ -55,7 +55,6 @@ export async function POST(request: Request) {
 
   let familyId: string | null = null;
   let childId: string | null = null;
-  let supabase;
 
   if (token) {
     const admin = createServiceClient();
@@ -72,14 +71,12 @@ export async function POST(request: Request) {
 
     familyId = row.family_id;
     childId = row.child_id;
-    supabase = admin;
     await admin
       .from("child_location_tokens")
       .update({ last_used_at: new Date().toISOString() })
       .eq("token_hash", tokenHash);
   } else {
     const context = await getAppContext();
-    supabase = context.supabase;
     familyId = context.familyId;
     childId = context.childId;
     if (!familyId || !childId) {
@@ -91,17 +88,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Entre como a criança para compartilhar o local." }, { status: 403 });
   }
 
-  const { data: family } = await supabase
-    .from("families")
-    .select("location_24h_enabled")
-    .eq("id", familyId)
-    .maybeSingle();
-
-  if (!family?.location_24h_enabled) {
-    return NextResponse.json({ error: "Rastreador desligado." }, { status: 403 });
-  }
-
-  const { data, error } = await upsertLiveLocation(supabase, {
+  const { data, error } = await upsertLiveLocation(createServiceClient(), {
     childId,
     familyId,
     ...coords,

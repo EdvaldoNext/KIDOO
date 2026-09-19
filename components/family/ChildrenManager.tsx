@@ -8,6 +8,7 @@ import { HelpTip } from "@/components/HelpTip";
 import { KidAvatar } from "@/components/kids/KidAvatar";
 import { KidsAccessCard } from "@/components/family/KidsAccessCard";
 import { liveSignalLabel, liveSignalStatus, type LiveSignalStatus } from "@/lib/live-location";
+import { useFamilyLiveLocations } from "@/lib/use-family-live-locations";
 
 type Child = {
   id: string;
@@ -40,31 +41,18 @@ export function ChildrenManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [liveAt, setLiveAt] = useState(liveCapturedAt);
+  const liveRows = useFamilyLiveLocations();
 
   useEffect(() => {
     setLiveAt(liveCapturedAt);
   }, [liveCapturedAt]);
 
   useEffect(() => {
-    if (!locationOn) return;
-    let cancelled = false;
-
-    async function refresh() {
-      const response = await fetch("/api/family/live-location");
-      const payload = (await response.json()) as { locations?: { child_id: string; captured_at: string }[] };
-      if (cancelled || !response.ok) return;
-      const next: Record<string, string> = {};
-      for (const row of payload.locations ?? []) next[row.child_id] = row.captured_at;
-      setLiveAt(next);
-    }
-
-    void refresh();
-    const id = window.setInterval(() => void refresh(), 12000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [locationOn]);
+    if (liveRows.length === 0) return;
+    const next: Record<string, string> = {};
+    for (const row of liveRows) next[row.child_id] = row.captured_at;
+    setLiveAt(next);
+  }, [liveRows]);
 
   useEffect(() => {
     if (accessKey) return;
