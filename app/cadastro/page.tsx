@@ -12,8 +12,8 @@ export default function CadastroPage() {
         <BrandLogo size="lg" />
       </Link>
       <p className="mb-4 max-w-md text-center text-navy/70">
-        Cadastro só para pais. Depois você cadastra os filhos e envia o link com
-        a chave da família.
+        Quem cria a família gera as chaves CASA e PAIS. O próximo responsável
+        entra com as duas no login e já cai no painel.
       </p>
       <SignUpForm />
       </div>

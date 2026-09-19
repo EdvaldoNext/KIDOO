@@ -43,7 +43,7 @@ export default async function ChildrenPage({
         title="Filhos"
         subtitle={
           firstTime
-            ? "Família pronta. Cadastre o primeiro filho e envie o link com a chave."
+            ? "Família pronta. As chaves CASA e PAIS estão em Configurações. Cadastre o primeiro filho."
             : count === 0
               ? "Cadastre quem vai usar o app das crianças."
               : count === 1

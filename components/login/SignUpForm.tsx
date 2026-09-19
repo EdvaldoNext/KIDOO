@@ -143,7 +143,7 @@ export function SignUpForm() {
         <span className="inline-flex items-center">
           Senha (mín. 8 caracteres)
           <HelpTip label="Ajuda sobre a senha">
-            Só os pais usam e-mail e senha. Os filhos entram depois com o link e a chave.
+            O primeiro responsável usa e-mail e senha. Depois, as chaves CASA e PAIS ficam em Configurações para qualquer celular entrar no painel.
           </HelpTip>
         </span>
         <input name="password" type="password" required minLength={8} autoComplete="new-password" className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-3 outline-none ring-royal focus:ring-2" />
@@ -167,7 +167,7 @@ export function SignUpForm() {
         {pending ? "Criando..." : "Criar família"}
       </button>
       <p className="text-center text-sm text-navy/70">
-        Já tem conta?{" "}
+        Já tem as chaves da casa?{" "}
         <Link href="/login" className="font-bold text-royal">
           Entrar
         </Link>

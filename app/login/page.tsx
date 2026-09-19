@@ -22,8 +22,8 @@ export default async function LoginPage({
       </Link>
       <p className="mb-4 max-w-md text-center text-navy/70">
         {CLIENT_DEV_BYPASS_AUTH
-          ? "Modo teste: entre direto, sem e-mail ou chave."
-          : "Pais entram com e-mail. Filhos usam o link e a chave da família."}
+          ? "Modo teste: entre com as chaves ou vá direto ao painel."
+          : "Pais entram com as chaves CASA e PAIS. Filhos usam só a chave da casa."}
       </p>
       <LoginForm />
       </div>

@@ -4,6 +4,7 @@ import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { DEV_COOKIE_OPTIONS } from "@/lib/dev-cookies";
 import { generateKidsAccessKey } from "@/lib/kids-access";
+import { ensureParentAccessKey, familyKeysOnCreate } from "@/lib/parent-invite";
 
 function alreadyExists(error: { message?: string; code?: string } | null) {
   const message = (error?.message ?? "").toLowerCase();
@@ -106,21 +107,38 @@ export async function POST(request: Request) {
     let familyId = existingProfile?.family_id ?? null;
 
     if (!familyId) {
-      const { data: family, error: familyError } = await admin
+      const keys = familyKeysOnCreate();
+      let familyInsert = await admin
         .from("families")
         .insert({
           name: familyName,
           lgpd_accepted_at: new Date().toISOString(),
-          kids_access_key: generateKidsAccessKey(),
+          ...keys,
         })
         .select("id")
         .single();
+
+      if (familyInsert.error) {
+        familyInsert = await admin
+          .from("families")
+          .insert({
+            name: familyName,
+            lgpd_accepted_at: new Date().toISOString(),
+            kids_access_key: keys.kids_access_key || generateKidsAccessKey(),
+          })
+          .select("id")
+          .single();
+      }
+
+      const family = familyInsert.data;
+      const familyError = familyInsert.error;
 
       if (familyError || !family) {
         return NextResponse.json({ error: familyError?.message ?? "Falha ao criar família." }, { status: 400 });
       }
 
       familyId = family.id;
+      await ensureParentAccessKey(admin, familyId);
 
       const { error: profileError } = await admin.from("profiles").insert({
         id: userId,

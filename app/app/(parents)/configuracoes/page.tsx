@@ -1,6 +1,10 @@
 import { getAppContext } from "@/lib/app-context";
 import { FamilySettingsForm } from "@/components/family/FamilySettingsForm";
+import { ParentsManager } from "@/components/family/ParentsManager";
 import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
+import { ensureParentAccessKey } from "@/lib/parent-invite";
+import { ensureKidsAccessKey } from "@/lib/kids-access";
+import { createServiceClient } from "@/utils/supabase/admin";
 
 export default async function SettingsPage() {
   const { supabase, familyId } = await getAppContext();
@@ -13,11 +17,16 @@ export default async function SettingsPage() {
     );
   }
 
-  const { data: family } = await supabase
-    .from("families")
-    .select("id, name, reward_mode, points_per_currency, currency_amount, reward_note, location_24h_enabled")
-    .eq("id", familyId)
-    .single();
+  const admin = createServiceClient();
+  const [{ data: family }, kidsAccessKey, parentAccessKey] = await Promise.all([
+    supabase
+      .from("families")
+      .select("id, name, reward_mode, points_per_currency, currency_amount, reward_note, location_24h_enabled")
+      .eq("id", familyId)
+      .single(),
+    ensureKidsAccessKey(admin, familyId),
+    ensureParentAccessKey(admin, familyId),
+  ]);
 
   if (!family) return <p>Família não encontrada.</p>;
 
@@ -26,11 +35,12 @@ export default async function SettingsPage() {
       <ParentPageHeader
         eyebrow="Combinados da casa"
         title="Configurações"
-        subtitle="Recompensa, rastreador ao vivo e o que fazer com os dados."
+        subtitle="Chaves da casa, recompensa, rastreador e dados da família."
       />
-      <ParentTrustStrip aside="Você pode apagar tudo quando quiser.">
-        Fotos, local e pontos ficam só nesta família.
+      <ParentTrustStrip aside="Guarde as duas chaves.">
+        CASA é dos filhos. PAIS abre o painel em qualquer celular responsável.
       </ParentTrustStrip>
+      <ParentsManager kidsAccessKey={kidsAccessKey} parentAccessKey={parentAccessKey} />
       <FamilySettingsForm family={family} />
     </div>
   );
