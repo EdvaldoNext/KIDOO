@@ -50,7 +50,11 @@ export function KidsLiveLocation({
         const session = (await sessionResponse.json()) as { token?: string; error?: string };
         if (cancelled) return;
         if (!sessionResponse.ok || !session.token) {
-          setMessage(session.error ?? "Não deu para ligar o rastreador nativo.");
+          setMessage(
+            sessionResponse.status === 409
+              ? "Os pais desligaram o rastreador ao vivo."
+              : (session.error ?? "Não deu para ligar o rastreador nativo."),
+          );
           return;
         }
 
@@ -128,7 +132,14 @@ export function KidsLiveLocation({
             setMessage("Localização ligada. Os pais veem o mapa enquanto o KIDOO estiver aberto.");
             return;
           }
-          const payload = (await response.json()) as { error?: string };
+          const payload = (await response.json()) as { error?: string; tracking?: boolean };
+          if (response.status === 409 || payload.tracking === false) {
+            stopWatch.current?.();
+            stopWatch.current = null;
+            setWatching(false);
+            setMessage("Os pais desligaram o rastreador ao vivo.");
+            return;
+          }
           setMessage(payload.error ?? "Não deu para enviar o local agora.");
         });
       },

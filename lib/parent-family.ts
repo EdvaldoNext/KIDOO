@@ -8,18 +8,7 @@ import { isParentRole } from "@/lib/auth";
 export async function requireParentFamilyId() {
   if (DEV_BYPASS_AUTH) {
     const cookieStore = await cookies();
-    const fromCookie = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
-    if (fromCookie) return fromCookie;
-
-    const admin = createServiceClient();
-    const { data } = await admin
-      .from("families")
-      .select("id")
-      .eq("status", "active")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    return data?.id ?? null;
+    return cookieStore.get(DEV_FAMILY_COOKIE)?.value ?? null;
   }
 
   const supabase = await createClient();

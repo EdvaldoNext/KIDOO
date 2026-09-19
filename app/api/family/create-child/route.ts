@@ -20,18 +20,6 @@ export async function POST(request: Request) {
     familyId = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
 
     if (!familyId) {
-      const admin = createServiceClient();
-      const { data } = await admin
-        .from("families")
-        .select("id")
-        .eq("status", "active")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      familyId = data?.id;
-    }
-
-    if (!familyId) {
       return NextResponse.json({ error: "Crie uma família em /cadastro primeiro." }, { status: 400 });
     }
 

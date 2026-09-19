@@ -1,6 +1,8 @@
 import { getAppContext } from "@/lib/app-context";
 import { ChildrenManager } from "@/components/family/ChildrenManager";
 import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
+import { ensureKidsAccessKey } from "@/lib/kids-access";
+import { createServiceClient } from "@/utils/supabase/admin";
 
 export default async function ChildrenPage({
   searchParams,
@@ -18,11 +20,10 @@ export default async function ChildrenPage({
 
   if (familyId) childrenQuery = childrenQuery.eq("family_id", familyId);
 
-  const [{ data: children }, { data: family }, liveResult] = await Promise.all([
+  const admin = familyId ? createServiceClient() : null;
+  const [{ data: children }, kidsAccessKey, liveResult] = await Promise.all([
     childrenQuery,
-    familyId
-      ? supabase.from("families").select("kids_access_key").eq("id", familyId).maybeSingle()
-      : Promise.resolve({ data: null }),
+    familyId && admin ? ensureKidsAccessKey(admin, familyId) : Promise.resolve(null),
     familyId
       ? supabase.from("child_live_locations").select("child_id, captured_at").eq("family_id", familyId)
       : Promise.resolve({ data: [] }),
@@ -56,7 +57,7 @@ export default async function ChildrenPage({
       </ParentTrustStrip>
       <ChildrenManager
         childrenList={children ?? []}
-        kidsAccessKey={family?.kids_access_key ?? null}
+        kidsAccessKey={kidsAccessKey}
         locationOn
         liveCapturedAt={liveCapturedAt}
       />

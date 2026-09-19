@@ -3,6 +3,7 @@ import { getAppContext } from "@/lib/app-context";
 import { createServiceClient } from "@/utils/supabase/admin";
 import type { LiveLocationRow } from "@/lib/live-location";
 import {
+  familyAllowsLiveLocation,
   hashLocationToken,
   parseLiveCoordinates,
   upsertLiveLocation,
@@ -55,9 +56,9 @@ export async function POST(request: Request) {
 
   let familyId: string | null = null;
   let childId: string | null = null;
+  const admin = createServiceClient();
 
   if (token) {
-    const admin = createServiceClient();
     const tokenHash = hashLocationToken(token);
     const { data: row } = await admin
       .from("child_location_tokens")
@@ -88,7 +89,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Entre como a criança para compartilhar o local." }, { status: 403 });
   }
 
-  const { data, error } = await upsertLiveLocation(createServiceClient(), {
+  const trackingOn = await familyAllowsLiveLocation(admin, familyId);
+  if (!trackingOn) {
+    return NextResponse.json(
+      { error: "Rastreador desligado pelos pais.", tracking: false },
+      { status: 409 },
+    );
+  }
+
+  const { data, error } = await upsertLiveLocation(admin, {
     childId,
     familyId,
     ...coords,

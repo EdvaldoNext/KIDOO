@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { clearDevChildCookie } from "@/lib/dev-cookies";
+import { clearDeviceCookies } from "@/lib/dev-cookies";
 
 export async function POST() {
-  return clearDevChildCookie(NextResponse.json({ ok: true }));
+  return clearDeviceCookies(NextResponse.json({ ok: true }));
 }

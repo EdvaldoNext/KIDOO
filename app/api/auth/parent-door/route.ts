@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
-import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
-import { DEV_COOKIE_OPTIONS } from "@/lib/dev-cookies";
+import { establishProfileSession } from "@/lib/auth-session";
+import { isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { findFamilyByParentKeys } from "@/lib/parent-invite";
-import { signInAsChild } from "@/lib/kids-access";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
@@ -23,10 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Chaves inválidas. Use CASA e PAIS desta família." }, { status: 401 });
     }
 
+    const secure = isSecureRequest(request);
+
     if (DEV_BYPASS_AUTH) {
-      const response = NextResponse.json({ ok: true, family_id: family.id });
-      response.cookies.set(DEV_FAMILY_COOKIE, family.id, DEV_COOKIE_OPTIONS);
-      return response;
+      return withDevFamilySession(NextResponse.json({ ok: true, family_id: family.id }), family.id, secure);
     }
 
     const { data: parent } = await admin
@@ -42,18 +40,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Esta família ainda não tem responsável." }, { status: 404 });
     }
 
-    const tokenHash = await signInAsChild(admin, parent.id);
-    const supabase = await createClient();
-    const { error: otpError } = await supabase.auth.verifyOtp({
-      type: "magiclink",
-      token_hash: tokenHash,
-    });
-
-    if (otpError) {
-      return NextResponse.json({ error: "Não foi possível entrar. Tente de novo." }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true, family_id: family.id });
+    await establishProfileSession(parent.id);
+    return withDevFamilySession(NextResponse.json({ ok: true, family_id: family.id }), family.id, secure);
   } catch {
     return NextResponse.json({ error: "Não foi possível abrir o painel dos pais." }, { status: 500 });
   }

@@ -10,18 +10,7 @@ import { ensureKidsAccessKey, KIDS_ENTRY_PATH } from "@/lib/kids-access";
 async function resolveParentFamilyId() {
   if (DEV_BYPASS_AUTH) {
     const cookieStore = await cookies();
-    let familyId = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
-    if (familyId) return familyId;
-
-    const admin = createServiceClient();
-    const { data } = await admin
-      .from("families")
-      .select("id")
-      .eq("status", "active")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    return data?.id ?? null;
+    return cookieStore.get(DEV_FAMILY_COOKIE)?.value ?? null;
   }
 
   const supabase = await createClient();

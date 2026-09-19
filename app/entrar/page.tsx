@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DevModeBanner } from "@/components/DevModeBanner";
+import { ResumeDeviceSession } from "@/components/auth/ResumeDeviceSession";
 import { KidsEnterFlow } from "@/components/kids/KidsEnterFlow";
 import { hasActiveKidsSession, KIDS_PWA_MANIFEST_PATH } from "@/lib/kids-pwa";
 
@@ -29,6 +30,7 @@ export default async function KidsEnterPage({
           <BrandLogo size="hero" wordmark={false} />
         </Link>
         <Suspense fallback={<p className="font-bold text-navy/70">Carregando...</p>}>
+          {trocar === "1" ? null : <ResumeDeviceSession as="child" />}
           <KidsEnterFlow />
         </Suspense>
       </div>

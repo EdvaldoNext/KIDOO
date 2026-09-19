@@ -57,6 +57,7 @@ export async function updateSession(request: NextRequest) {
   const isKidsPath = path.startsWith("/app/kids");
   const isFamilyApp = path.startsWith("/app");
   const isKidsEntry = path === "/entrar";
+  const isPasswordReset = path === "/recuperar-senha" || path === "/redefinir-senha" || path.startsWith("/auth/");
   const isFamilyLogin = path === "/login" || path === "/cadastro" || path === "/onboarding" || isKidsEntry;
 
   if (isAdminPath) {
@@ -83,6 +84,10 @@ export async function updateSession(request: NextRequest) {
     if (admin) return redirect("/admin");
     if (role === "child") return redirect("/app/kids");
     if (!isParentRole(role)) return redirect("/onboarding");
+    return supabaseResponse;
+  }
+
+  if (isPasswordReset) {
     return supabaseResponse;
   }
 

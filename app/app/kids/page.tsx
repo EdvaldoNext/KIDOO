@@ -77,7 +77,7 @@ export default async function KidsHomePage() {
     <div className="space-y-6">
       {!canView ? (
         <div className="rounded-3xl bg-white p-8">
-          <KidsMascot size="hero" caption="Peça aos pais o link e a chave da família para entrar." />
+          <KidsMascot size="hero" caption="Peça aos pais o link de entrada no celular." />
         </div>
       ) : (
         <section className="space-y-4">

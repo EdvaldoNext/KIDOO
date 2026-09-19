@@ -69,6 +69,9 @@ export function FamilySettingsForm({ family }: { family: Family }) {
         body: JSON.stringify(payload),
       });
       const result = (await response.json()) as { error?: string };
+      if (!result.error && !enabled) {
+        await fetch("/api/family/live-location/session", { method: "DELETE" });
+      }
       setMessage(result.error ?? (enabled ? "Rastreador ligado." : "Rastreador desligado."));
       if (!result.error) router.refresh();
       return;
@@ -76,6 +79,9 @@ export function FamilySettingsForm({ family }: { family: Family }) {
 
     const supabase = createClient();
     const { error } = await supabase.from("families").update(payload).eq("id", family.id);
+    if (!error && !enabled) {
+      await fetch("/api/family/live-location/session", { method: "DELETE" });
+    }
     setMessage(error ? error.message : enabled ? "Rastreador ligado." : "Rastreador desligado.");
     if (!error) router.refresh();
   }

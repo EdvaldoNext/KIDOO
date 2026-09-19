@@ -122,6 +122,9 @@ export function LoginForm() {
           >
             {pending ? "Entrando..." : "Entrar no painel dos pais"}
           </button>
+          <Link href="/recuperar-senha" className="block text-center text-sm font-bold text-royal">
+            Esqueci minha senha
+          </Link>
           <button
             type="button"
             className="w-full text-center text-sm font-bold text-royal"

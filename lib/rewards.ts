@@ -85,8 +85,11 @@ export function kidsPointsNavLabel(reward: FamilyReward | null | undefined) {
 }
 
 export async function loadFamilyReward(supabase: SupabaseClient, familyId: string | null) {
-  let query = supabase.from("families").select("reward_mode, currency_amount, reward_note");
-  query = familyId ? query.eq("id", familyId).limit(1) : query.limit(1);
-  const { data } = await query.maybeSingle();
+  if (!familyId) return null;
+  const { data } = await supabase
+    .from("families")
+    .select("reward_mode, currency_amount, reward_note")
+    .eq("id", familyId)
+    .maybeSingle();
   return data as FamilyReward | null;
 }

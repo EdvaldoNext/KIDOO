@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getAppContext } from "@/lib/app-context";
 import { createServiceClient } from "@/utils/supabase/admin";
-import { createLocationToken, hashLocationToken } from "@/lib/live-location-server";
+import { requireParentActor } from "@/lib/parent-family";
+import {
+  createLocationToken,
+  familyAllowsLiveLocation,
+  hashLocationToken,
+  revokeFamilyLocationTokens,
+} from "@/lib/live-location-server";
 
 export async function POST() {
   const { familyId, childId } = await getAppContext();
@@ -10,6 +16,10 @@ export async function POST() {
   }
 
   const admin = createServiceClient();
+  if (!(await familyAllowsLiveLocation(admin, familyId))) {
+    return NextResponse.json({ error: "Rastreador desligado pelos pais.", tracking: false }, { status: 409 });
+  }
+
   const token = createLocationToken();
   const { error } = await admin.from("child_location_tokens").insert({
     token_hash: hashLocationToken(token),
@@ -33,4 +43,15 @@ export async function POST() {
     child_id: childId,
     family_id: familyId,
   });
+}
+
+export async function DELETE() {
+  const actor = await requireParentActor();
+  if (!actor?.familyId) {
+    return NextResponse.json({ error: "Só os pais podem desligar o rastreador." }, { status: 403 });
+  }
+
+  const admin = createServiceClient();
+  await revokeFamilyLocationTokens(admin, actor.familyId);
+  return NextResponse.json({ ok: true });
 }

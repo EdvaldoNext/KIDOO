@@ -17,20 +17,9 @@ export type AppContext = {
   devMode: boolean;
 };
 
-async function resolveDevFamilyId(admin: SupabaseClient): Promise<string | null> {
+async function resolveDevFamilyId(): Promise<string | null> {
   const cookieStore = await cookies();
-  const fromCookie = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
-  if (fromCookie) return fromCookie;
-
-  const { data } = await admin
-    .from("families")
-    .select("id")
-    .eq("status", "active")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  return data?.id ?? null;
+  return cookieStore.get(DEV_FAMILY_COOKIE)?.value ?? null;
 }
 
 async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null) {
@@ -69,7 +58,7 @@ async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null
 export async function getAppContext(): Promise<AppContext> {
   if (DEV_BYPASS_AUTH) {
     const supabase = createServiceClient();
-    const familyId = await resolveDevFamilyId(supabase);
+    const familyId = await resolveDevFamilyId();
     const { ownerId, childId } = await resolveDevProfiles(supabase, familyId);
 
     return {

@@ -66,3 +66,16 @@ export async function upsertLiveLocation(
     .select("child_id, family_id, lat, lng, accuracy_m, heading, speed_mps, captured_at, sharing, source")
     .maybeSingle();
 }
+
+export async function familyAllowsLiveLocation(admin: SupabaseClient, familyId: string) {
+  const { data } = await admin
+    .from("families")
+    .select("location_24h_enabled")
+    .eq("id", familyId)
+    .maybeSingle();
+  return Boolean(data?.location_24h_enabled);
+}
+
+export async function revokeFamilyLocationTokens(admin: SupabaseClient, familyId: string) {
+  await admin.from("child_location_tokens").delete().eq("family_id", familyId);
+}
