@@ -22,7 +22,7 @@ export default async function ParentHomePage() {
   }
 
   const { year, month } = currentScorePeriod();
-  const [tasksResult, childrenResult, familyResult, scoresResult, payoutsResult, reward] = await Promise.all([
+  const [tasksResult, childrenResult, familyResult, scoresResult, payoutsResult, reward, anyTaskResult] = await Promise.all([
     supabase
       .from("tasks")
       .select("id, title, status, weight, kind, assigned_child_id")
@@ -44,10 +44,13 @@ export default async function ParentHomePage() {
       .eq("year", year)
       .eq("month", month),
     loadFamilyReward(supabase, familyId),
+    supabase.from("tasks").select("id", { count: "exact", head: true }).eq("family_id", familyId),
   ]);
 
   const tasks = tasksResult.data ?? [];
   const children = childrenResult.data ?? [];
+  const hasTask = (anyTaskResult.count ?? 0) > 0;
+  const firstRun = children.length === 0 || !hasTask;
   const monthPoints = (scoresResult.data ?? []).reduce((sum, row) => sum + Number(row.balance ?? 0), 0);
   const monthPaid = sumPaid(payoutsResult.data);
 
@@ -62,8 +65,9 @@ export default async function ParentHomePage() {
         monthPaid={monthPaid}
         reward={reward}
         locationOn
+        firstRun={firstRun}
       >
-        <FirstSteps childCount={children.length} openTaskCount={tasks.length} />
+        <FirstSteps childCount={children.length} hasTask={hasTask} />
       </ParentToday>
     </div>
   );

@@ -2,76 +2,121 @@ import Link from "next/link";
 
 type FirstStepsProps = {
   childCount: number;
-  openTaskCount: number;
+  hasTask: boolean;
 };
 
-export function FirstSteps({ childCount, openTaskCount }: FirstStepsProps) {
+export function FirstSteps({ childCount, hasTask }: FirstStepsProps) {
+  const hasChild = childCount > 0;
+  if (hasChild && hasTask) return null;
+
   const steps = [
     {
-      done: childCount > 0,
+      done: hasChild,
       href: "/app/filhos",
-      title: "Cadastrar um filho",
-      text: "Gere o link e a chave para a criança entrar.",
-      disabled: false,
+      title: "Cadastrar o filho",
+      text: "Passe a chave CASA no celular dele.",
+      cta: "Cadastrar agora",
+      locked: false,
     },
     {
-      done: openTaskCount > 0,
+      done: hasTask,
       href: "/app/tarefas/nova",
-      title: "Criar a primeira tarefa",
-      text: "Algo simples, como arrumar a cama.",
-      disabled: childCount === 0,
+      title: "Criar uma tarefa",
+      text: "Ele faz, manda a foto e você aprova.",
+      cta: "Criar agora",
+      locked: !hasChild,
     },
     {
       done: false,
       href: "/app/configuracoes",
       title: "Combinar a recompensa",
-      text: "Pontos, mesada ou um combinado da família.",
-      disabled: false,
+      text: "Pontos ou mesada, se quiser.",
+      cta: "Abrir combinado",
+      locked: false,
       optional: true,
     },
-  ];
+  ] as const;
 
-  const requiredDone = childCount > 0 && openTaskCount > 0;
-  if (requiredDone) return null;
+  const currentIndex = steps.findIndex((step) => !step.done && !step.locked);
+  const current = currentIndex >= 0 ? currentIndex + 1 : steps.length;
 
   return (
-    <section className="rounded-2xl bg-white p-5 ring-1 ring-navy/5">
-      <h2 className="text-lg font-extrabold">Para começar</h2>
-      <p className="mt-1 text-sm text-navy/70">Siga nesta ordem. Leva poucos minutos.</p>
-      <ol className="mt-4 space-y-3">
-        {steps.map((step, index) => (
-          <li key={step.href}>
-            {step.disabled ? (
-              <div className="flex items-start gap-3 rounded-xl bg-canvas px-4 py-3 opacity-60">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-navy/10 text-sm font-extrabold">
-                  {index + 1}
+    <section aria-labelledby="onboarding-title" className="rounded-2xl bg-white p-5 ring-1 ring-navy/5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="onboarding-title" className="text-lg font-extrabold">
+            Como usar
+          </h2>
+          <p className="mt-1 text-sm text-navy/70">Você cria. O filho faz. Você aprova.</p>
+        </div>
+        <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-navy/45" aria-live="polite">
+          Passo {current} de {steps.length}
+        </p>
+      </div>
+
+      <ol className="mt-4 space-y-2">
+        {steps.map((step, index) => {
+          const isCurrent = index === currentIndex;
+          const mark = step.done ? "✓" : index + 1;
+
+          if (step.locked) {
+            return (
+              <li
+                key={step.href}
+                className="flex items-start gap-3 rounded-xl bg-canvas px-4 py-3 opacity-60"
+              >
+                <span
+                  aria-hidden
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-navy/10 text-sm font-extrabold"
+                >
+                  {mark}
                 </span>
                 <div>
                   <p className="font-bold">{step.title}</p>
-                  <p className="text-sm text-navy/70">Cadastre um filho primeiro.</p>
+                  <p className="text-sm text-navy/70">Cadastre o filho primeiro.</p>
                 </div>
-              </div>
-            ) : (
+              </li>
+            );
+          }
+
+          return (
+            <li key={step.href}>
               <Link
                 href={step.href}
-                className="flex items-start gap-3 rounded-xl bg-canvas px-4 py-3 ring-1 ring-navy/5 hover:ring-royal"
+                aria-current={isCurrent ? "step" : undefined}
+                className={
+                  isCurrent
+                    ? "flex items-start gap-3 rounded-xl bg-royal/10 px-4 py-3 ring-2 ring-royal"
+                    : "flex items-start gap-3 rounded-xl bg-canvas px-4 py-3 ring-1 ring-navy/5 hover:ring-royal"
+                }
               >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-royal text-sm font-extrabold text-white">
-                  {step.done ? "✓" : index + 1}
+                <span
+                  aria-hidden
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-extrabold ${
+                    step.done ? "bg-success text-navy" : isCurrent ? "bg-royal text-white" : "bg-navy/10"
+                  }`}
+                >
+                  {mark}
                 </span>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-bold">
+                    {isCurrent ? <span className="sr-only">Agora: </span> : null}
                     {step.title}
                     {step.optional ? (
                       <span className="ml-2 text-xs font-semibold text-navy/50">opcional</span>
                     ) : null}
                   </p>
                   <p className="text-sm text-navy/70">{step.text}</p>
+                  {isCurrent ? (
+                    <span className="mt-2 inline-flex rounded-lg bg-royal px-3 py-1.5 text-sm font-bold text-white">
+                      {step.cta}
+                    </span>
+                  ) : null}
                 </div>
               </Link>
-            )}
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ol>
     </section>
   );

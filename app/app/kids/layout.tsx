@@ -31,7 +31,7 @@ export default async function KidsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { supabase, familyId, childId } = await getAppContext();
+  const { supabase, familyId, childId, ownerId } = await getAppContext();
 
   let childrenQuery = supabase
     .from("profiles")
@@ -67,7 +67,7 @@ export default async function KidsLayout({
           <Link href="/entrar?trocar=1" className="hidden rounded-2xl bg-white/20 px-3 py-2 text-sm font-extrabold">
             Trocar
           </Link>
-          <SignOutButton label="Sair" redirectTo="/entrar" forgetDevice />
+          <SignOutButton label="Sair" redirectTo="/entrar" forgetDevice keepAuth={Boolean(ownerId)} />
         </div>
       </header>
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />

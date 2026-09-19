@@ -66,6 +66,7 @@ export function ParentToday({
   monthPaid = 0,
   reward,
   locationOn,
+  firstRun = false,
   children,
 }: {
   familyName: string | null;
@@ -75,6 +76,7 @@ export function ParentToday({
   monthPaid?: number;
   reward: FamilyReward | null;
   locationOn: boolean;
+  firstRun?: boolean;
   children?: ReactNode;
 }) {
   const names = new Map(childrenList.map((child) => [child.id, prettyName(child.display_name)]));
@@ -150,6 +152,7 @@ export function ParentToday({
 
       <div className="grid gap-3">
         {tasks.length === 0 ? (
+          firstRun ? null : (
           <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-navy/5">
             <p className="font-bold">
               {childrenList.length === 0
@@ -163,6 +166,7 @@ export function ParentToday({
               {childrenList.length === 0 ? "Cadastrar filho" : "Criar tarefa"}
             </Link>
           </div>
+          )
         ) : (
           tasks.map((task) => {
             const childName = names.get(task.assigned_child_id ?? "") ?? "Filho(a)";

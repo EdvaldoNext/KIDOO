@@ -26,10 +26,9 @@ function namedApp(displayName: string | null | undefined) {
 }
 
 export async function hasActiveKidsSession() {
-  if (DEV_BYPASS_AUTH) {
-    const cookieStore = await cookies();
-    return Boolean(cookieStore.get(DEV_CHILD_COOKIE)?.value);
-  }
+  const cookieStore = await cookies();
+  if (cookieStore.get(DEV_CHILD_COOKIE)?.value) return true;
+  if (DEV_BYPASS_AUTH) return false;
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -77,6 +76,18 @@ export async function resolveKidsPwaIdentity(): Promise<KidsPwaIdentity> {
     try {
       const admin = createServiceClient();
       const { data } = await admin.from("profiles").select("display_name").eq("id", childId).maybeSingle();
+      return { startUrl: KIDS_PWA_START_URL, appName: namedApp(data?.display_name) };
+    } catch {
+      return { startUrl: KIDS_PWA_START_URL, appName: "KIDOO" };
+    }
+  }
+
+  const cookieStore = await cookies();
+  const cookieChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
+  if (cookieChildId) {
+    try {
+      const admin = createServiceClient();
+      const { data } = await admin.from("profiles").select("display_name").eq("id", cookieChildId).maybeSingle();
       return { startUrl: KIDS_PWA_START_URL, appName: namedApp(data?.display_name) };
     } catch {
       return { startUrl: KIDS_PWA_START_URL, appName: "KIDOO" };

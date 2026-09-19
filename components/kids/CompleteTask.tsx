@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { KidsMascot } from "@/components/kids/KidsMascot";
 import { RejectionFeedback } from "@/components/tasks/RejectionFeedback";
-import { photoKey, STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
+import { photoKey } from "@/lib/photo-key";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { requestBrowserPosition, type GeoResult } from "@/lib/geo";
 
@@ -105,79 +104,34 @@ export function CompleteTask({
     const lng = geo.ok ? geo.fix.lng : null;
     const locationAvailable = geo.ok;
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      const formData = new FormData();
-      formData.set("task_id", task.id);
-      formData.set("completion_id", completionId);
-      formData.set("family_id", task.family_id);
-      formData.set("child_id", task.assigned_child_id);
-      formData.set("kind", task.kind);
-      formData.set("location_available", String(locationAvailable));
-      if (lat != null) formData.set("lat", String(lat));
-      if (lng != null) formData.set("lng", String(lng));
-      if (childNote) formData.set("child_note", childNote);
-
-      if (photo) {
-        key = photoKey(task.family_id, task.assigned_child_id, completionId);
-        formData.set("photo_key", key);
-        const blob = await (await fetch(photo)).blob();
-        formData.set("photo", blob, "task.jpg");
-      }
-
-      const response = await fetch("/api/dev/complete-task", {
-        method: "POST",
-        body: formData,
-      });
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setError(payload.error ?? "Não foi possível enviar.");
-        setPending(false);
-        return;
-      }
-
-      router.push("/app/kids");
-      router.refresh();
-      return;
-    }
-
-    const supabase = createClient();
+    const formData = new FormData();
+    formData.set("task_id", task.id);
+    formData.set("completion_id", completionId);
+    formData.set("family_id", task.family_id);
+    formData.set("child_id", task.assigned_child_id);
+    formData.set("kind", task.kind);
+    formData.set("location_available", String(locationAvailable));
+    if (lat != null) formData.set("lat", String(lat));
+    if (lng != null) formData.set("lng", String(lng));
+    if (childNote) formData.set("child_note", childNote);
 
     if (photo) {
       key = photoKey(task.family_id, task.assigned_child_id, completionId);
+      formData.set("photo_key", key);
       const blob = await (await fetch(photo)).blob();
-      const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(key, blob, { contentType: "image/jpeg", upsert: false });
-      if (uploadError) {
-        setError("Não foi possível enviar a foto.");
-        setPending(false);
-        return;
-      }
+      formData.set("photo", blob, "task.jpg");
     }
 
-    const { error: insertError } = await supabase.from("task_completions").insert({
-      id: completionId,
-      family_id: task.family_id,
-      task_id: task.id,
-      child_id: task.assigned_child_id,
-      photo_key: key,
-      storage_provider: STORAGE_PROVIDER,
-      lat,
-      lng,
-      location_available: locationAvailable,
-      child_note: childNote,
-    });
-
-    if (insertError) {
-      setError(insertError.message);
+    const response = await fetch(
+      CLIENT_DEV_BYPASS_AUTH ? "/api/dev/complete-task" : "/api/family/complete-task",
+      { method: "POST", body: formData },
+    );
+    const payload = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      setError(payload.error ?? "Não foi possível enviar.");
       setPending(false);
       return;
     }
-
-    await supabase
-      .from("tasks")
-      .update({ status: task.kind === "points" ? "awaiting_approval" : "completed" })
-      .eq("id", task.id);
 
     router.push("/app/kids");
     router.refresh();

@@ -76,14 +76,32 @@ export async function getAppContext(): Promise<AppContext> {
   const claims = data?.claims as AppClaims | undefined;
   const role = familyRole(claims) as UserRole | null;
   const userId = claims?.sub ?? null;
-  const familyId = claims?.app_metadata?.family_id ?? null;
+  let familyId = claims?.app_metadata?.family_id ?? null;
+  const ownerId = isParentRole(role) ? userId : null;
+  let childId = role === "child" ? userId : null;
+
+  const cookieStore = await cookies();
+  const cookieChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
+  if (cookieChildId) {
+    const admin = createServiceClient();
+    const { data: child } = await admin
+      .from("profiles")
+      .select("id, family_id")
+      .eq("id", cookieChildId)
+      .eq("role", "child")
+      .maybeSingle();
+    if (child && (!familyId || child.family_id === familyId)) {
+      childId = child.id;
+      familyId = familyId ?? child.family_id;
+    }
+  }
 
   return {
     supabase,
     familyId,
     userId,
-    ownerId: isParentRole(role) ? userId : null,
-    childId: role === "child" ? userId : null,
+    ownerId,
+    childId,
     devMode: false,
   };
 }

@@ -9,18 +9,16 @@ import { HelpTip } from "@/components/HelpTip";
 
 export function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function onSubmit(formData: FormData) {
     setPending(true);
     setError(null);
-    setInfo(null);
 
-    const email = String(formData.get("email") ?? "");
+    const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
-    const displayName = String(formData.get("display_name") ?? "");
-    const familyName = String(formData.get("family_name") ?? "");
+    const displayName = String(formData.get("display_name") ?? "").trim();
+    const familyName = String(formData.get("family_name") ?? "").trim();
     const lgpd = formData.get("lgpd") === "on";
 
     if (!lgpd) {
@@ -29,9 +27,10 @@ export function SignUpForm() {
       return;
     }
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      try {
-        const response = await fetch("/api/dev/register-family", {
+    try {
+      const response = await fetch(
+        CLIENT_DEV_BYPASS_AUTH ? "/api/dev/register-family" : "/api/auth/register-family",
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -39,68 +38,32 @@ export function SignUpForm() {
             password,
             display_name: displayName,
             family_name: familyName,
+            lgpd_accepted: true,
           }),
-        });
-        const payload = (await response.json()) as { error?: string };
-        if (!response.ok) {
-          setError(payload.error ?? "Não foi possível criar a família.");
-          setPending(false);
-          return;
-        }
-        window.location.href = "/app/filhos?primeiro=1";
-        return;
-      } catch {
-        setError("Falha de rede ao criar a família de teste.");
+        },
+      );
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(payload.error ?? "Não foi possível criar a família.");
         setPending(false);
         return;
       }
-    }
 
-    const supabase = createClient();
-    const origin = window.location.origin;
-    let data;
-    let signError;
-    try {
-      ({ data, error: signError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${origin}/onboarding`,
-          data: { display_name: displayName },
-        },
-      }));
+      if (!CLIENT_DEV_BYPASS_AUTH) {
+        const supabase = createClient();
+        const { error: signError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signError) {
+          setError("Família criada. Entre com o mesmo e-mail e senha.");
+          setPending(false);
+          return;
+        }
+      }
+
+      window.location.href = "/app/filhos?primeiro=1";
     } catch {
-      setError("Não foi possível conectar ao Supabase. Verifique se o projeto está ativo.");
+      setError("Falha de rede ao criar a família.");
       setPending(false);
-      return;
     }
-
-    if (signError) {
-      setError(signError.message);
-      setPending(false);
-      return;
-    }
-
-    if (!data.session) {
-      setInfo("Conta criada. Confirme o e-mail e depois entre como pai/mãe.");
-      setPending(false);
-      return;
-    }
-
-    const { error: rpcError } = await supabase.rpc("register_parent", {
-      p_family_name: familyName,
-      p_display_name: displayName,
-      p_lgpd_accepted: true,
-    });
-
-    if (rpcError) {
-      setError(rpcError.message);
-      setPending(false);
-      return;
-    }
-
-    await supabase.auth.refreshSession();
-    window.location.href = "/app/filhos?primeiro=1";
   }
 
   return (
@@ -162,7 +125,6 @@ export function SignUpForm() {
         </span>
       </label>
       {error ? <p className="text-sm font-semibold text-alert">{error}</p> : null}
-      {info ? <p className="text-sm font-semibold text-royal">{info}</p> : null}
       <button type="submit" disabled={pending} className="w-full rounded-xl bg-royal py-3 font-bold text-white disabled:opacity-60">
         {pending ? "Criando..." : "Criar família"}
       </button>

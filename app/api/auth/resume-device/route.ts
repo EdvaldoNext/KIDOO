@@ -28,11 +28,11 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const role = familyRole(data?.claims as AppClaims | undefined);
-  if (role === "child") {
-    return NextResponse.json({ ok: true, role: "child" });
-  }
   if (isParentRole(role)) {
     return NextResponse.json({ ok: true, role: "parent" });
+  }
+  if (role === "child") {
+    return NextResponse.json({ ok: true, role: "child" });
   }
 
   if (!familyId) {

@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { isParentRole, type UserRole } from "@/lib/auth";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { EnterTestAppButton } from "@/components/dev/EnterTestAppButton";
 import { HelpTip } from "@/components/HelpTip";
@@ -41,37 +39,25 @@ export function LoginForm() {
   async function onParentSubmit(formData: FormData) {
     setPending(true);
     setError(null);
-    const supabase = createClient();
-    const email = String(formData.get("email") ?? "");
+    const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
-    const { data, error: signError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (signError) {
-      setError("E-mail ou senha inválidos.");
+    try {
+      const response = await fetch("/api/auth/parent-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = (await response.json()) as { error?: string; path?: string };
+      if (!response.ok) {
+        setError(payload.error ?? "E-mail ou senha inválidos.");
+        setPending(false);
+        return;
+      }
+      window.location.href = payload.path ?? "/app";
+    } catch {
+      setError("Falha de rede ao entrar.");
       setPending(false);
-      return;
     }
-
-    const role = data.user.app_metadata?.role as UserRole | undefined;
-    const admin = data.user.app_metadata?.platform_admin === true;
-    if (admin) {
-      await supabase.auth.signOut();
-      setError("Conta administrativa entra em /admin/login — este login é só da família.");
-      setPending(false);
-      return;
-    }
-    if (role === "child") {
-      await supabase.auth.signOut();
-      setError("Esta conta é de filho. Use o link e a chave que seus pais enviaram.");
-      setPending(false);
-      return;
-    }
-    if (isParentRole(role)) {
-      await fetch("/api/auth/remember-family", { method: "POST" });
-    }
-    window.location.href = isParentRole(role) ? "/app" : "/onboarding";
   }
 
   return (

@@ -7,10 +7,12 @@ export function SignOutButton({
   label = "Sair",
   redirectTo = "/login",
   forgetDevice = false,
+  keepAuth = false,
 }: {
   label?: string;
   redirectTo?: string;
   forgetDevice?: boolean;
+  keepAuth?: boolean;
 }) {
   return (
     <button
@@ -20,11 +22,15 @@ export function SignOutButton({
         if (isNativeAndroid()) {
           await KidooLocation.stop();
         }
-        await fetch(forgetDevice ? "/api/auth/kids-logout" : "/api/auth/leave-session", {
-          method: "POST",
-        });
-        const supabase = createClient();
-        await supabase.auth.signOut();
+        if (keepAuth) {
+          await fetch("/api/auth/leave-session", { method: "POST" });
+        } else {
+          if (forgetDevice) {
+            await fetch("/api/auth/kids-logout", { method: "POST" });
+          }
+          const supabase = createClient();
+          await supabase.auth.signOut();
+        }
         window.location.href = redirectTo;
       }}
     >

@@ -5,7 +5,7 @@ import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { attachProfileSession } from "@/lib/auth-session";
-import { familyRole, type AppClaims } from "@/lib/auth";
+import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { findFamilyByKidsKey } from "@/lib/kids-access";
 import { isSecureRequest, withDevKidsSession } from "@/lib/dev-cookies";
 
@@ -61,7 +61,12 @@ export async function POST(request: Request) {
     const response = withDevKidsSession(NextResponse.json({ ok: true }), allowedFamilyId, child.id, secure);
 
     if (!DEV_BYPASS_AUTH) {
-      await attachProfileSession(response, child.id);
+      const session = await createClient();
+      const { data } = await session.auth.getClaims();
+      const currentRole = familyRole(data?.claims as AppClaims | undefined);
+      if (!isParentRole(currentRole)) {
+        await attachProfileSession(response, child.id);
+      }
     }
 
     return response;
