@@ -67,7 +67,7 @@ export default async function KidsLayout({
           <Link href="/entrar?trocar=1" className="hidden rounded-2xl bg-white/20 px-3 py-2 text-sm font-extrabold">
             Trocar
           </Link>
-          <SignOutButton label="Sair" redirectTo="/entrar" />
+          <SignOutButton label="Sair" redirectTo="/entrar" forgetDevice />
         </div>
       </header>
       <KidsNav pointsLabel={kidsPointsNavLabel(reward)} />

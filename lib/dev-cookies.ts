@@ -59,3 +59,8 @@ export function clearDeviceCookies(response: NextResponse) {
   response.cookies.set(DEV_CHILD_COOKIE, "", expired);
   return response;
 }
+
+/** Leave the panel but keep this phone linked to the family. */
+export function keepFamilyDevice(response: NextResponse) {
+  return clearDevChildCookie(response);
+}

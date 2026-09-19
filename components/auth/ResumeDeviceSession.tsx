@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export function ResumeDeviceSession({
   as,
+  children,
 }: {
   as?: "parent" | "child" | "any";
+  children?: ReactNode;
 }) {
   const [status, setStatus] = useState<"idle" | "trying" | "done">("idle");
 
@@ -42,7 +44,9 @@ export function ResumeDeviceSession({
     };
   }, [as]);
 
-  if (status !== "trying") return null;
+  if (status === "trying") {
+    return <p className="text-center text-sm font-bold text-navy/60">Entrando neste celular…</p>;
+  }
 
-  return <p className="text-center text-sm font-bold text-navy/60">Entrando neste celular…</p>;
+  return children ?? null;
 }

@@ -68,6 +68,9 @@ export function LoginForm() {
       setPending(false);
       return;
     }
+    if (isParentRole(role)) {
+      await fetch("/api/auth/remember-family", { method: "POST" });
+    }
     window.location.href = isParentRole(role) ? "/app" : "/onboarding";
   }
 

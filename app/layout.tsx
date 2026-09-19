@@ -34,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${nunito.variable} h-full antialiased`}>
-      <body className="min-h-full bg-canvas text-navy">
+    <html lang="pt-BR" className={`${nunito.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full bg-canvas text-navy" suppressHydrationWarning>
         <AppAutoUpdate />
         {children}
       </body>

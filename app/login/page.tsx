@@ -26,8 +26,9 @@ export default async function LoginPage({
           ? "Modo teste: entre com as chaves ou vá direto ao painel."
           : "Pais entram com as chaves CASA e PAIS. Filhos usam só a chave da casa."}
       </p>
-      <ResumeDeviceSession as="parent" />
-      <LoginForm />
+      <ResumeDeviceSession as="parent">
+        <LoginForm />
+      </ResumeDeviceSession>
       </div>
     </div>
   );

@@ -30,8 +30,13 @@ export default async function KidsEnterPage({
           <BrandLogo size="hero" wordmark={false} />
         </Link>
         <Suspense fallback={<p className="font-bold text-navy/70">Carregando...</p>}>
-          {trocar === "1" ? null : <ResumeDeviceSession as="child" />}
-          <KidsEnterFlow />
+          {trocar === "1" ? (
+            <KidsEnterFlow />
+          ) : (
+            <ResumeDeviceSession as="child">
+              <KidsEnterFlow />
+            </ResumeDeviceSession>
+          )}
         </Suspense>
       </div>
     </div>

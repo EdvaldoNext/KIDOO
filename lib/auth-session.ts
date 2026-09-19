@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { createProfileLoginToken } from "@/lib/kids-access";
+import { DEV_COOKIE_MAX_AGE } from "@/lib/dev-cookies";
 
 export async function attachProfileSession(response: NextResponse, profileId: string) {
   const { tokenHash } = await createProfileLoginToken(createServiceClient(), profileId);
@@ -15,7 +16,12 @@ export async function attachProfileSession(response: NextResponse, profileId: st
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+            response.cookies.set(name, value, {
+              ...options,
+              path: "/",
+              maxAge: options.maxAge ?? DEV_COOKIE_MAX_AGE,
+              sameSite: options.sameSite ?? "lax",
+            });
           });
         },
       },
