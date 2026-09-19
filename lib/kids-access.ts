@@ -74,11 +74,11 @@ export async function listFamilyChildren(admin: SupabaseClient, familyId: string
   return (data ?? []) as KidsDoorChild[];
 }
 
-export async function signInAsChild(admin: SupabaseClient, childId: string) {
-  const { data: userData, error: userError } = await admin.auth.admin.getUserById(childId);
+export async function createProfileLoginToken(admin: SupabaseClient, profileId: string) {
+  const { data: userData, error: userError } = await admin.auth.admin.getUserById(profileId);
   const email = userData.user?.email;
   if (userError || !email) {
-    throw new Error("Não foi possível entrar. Tente de novo.");
+    throw new Error(userError?.message || "Conta sem e-mail para entrar.");
   }
 
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({
@@ -87,8 +87,13 @@ export async function signInAsChild(admin: SupabaseClient, childId: string) {
   });
 
   if (linkError || !link.properties?.hashed_token) {
-    throw new Error("Não foi possível entrar. Tente de novo.");
+    throw new Error(linkError?.message || "Não foi possível criar a sessão.");
   }
 
-  return link.properties.hashed_token;
+  return { tokenHash: link.properties.hashed_token, type: "email" as const };
+}
+
+export async function signInAsChild(admin: SupabaseClient, childId: string) {
+  const { tokenHash } = await createProfileLoginToken(admin, childId);
+  return tokenHash;
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
-import { establishProfileSession } from "@/lib/auth-session";
+import { attachProfileSession } from "@/lib/auth-session";
 import { isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { findFamilyByParentKeys } from "@/lib/parent-invite";
 
@@ -22,10 +22,13 @@ export async function POST(request: Request) {
     }
 
     const secure = isSecureRequest(request);
+    const response = withDevFamilySession(
+      NextResponse.json({ ok: true, family_id: family.id }),
+      family.id,
+      secure,
+    );
 
-    if (DEV_BYPASS_AUTH) {
-      return withDevFamilySession(NextResponse.json({ ok: true, family_id: family.id }), family.id, secure);
-    }
+    if (DEV_BYPASS_AUTH) return response;
 
     const { data: parent } = await admin
       .from("profiles")
@@ -40,9 +43,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Esta família ainda não tem responsável." }, { status: 404 });
     }
 
-    await establishProfileSession(parent.id);
-    return withDevFamilySession(NextResponse.json({ ok: true, family_id: family.id }), family.id, secure);
-  } catch {
-    return NextResponse.json({ error: "Não foi possível abrir o painel dos pais." }, { status: 500 });
+    await attachProfileSession(response, parent.id);
+    return response;
+  } catch (error) {
+    console.error("parent-door", error);
+    const message = error instanceof Error ? error.message : "Não foi possível abrir o painel dos pais.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

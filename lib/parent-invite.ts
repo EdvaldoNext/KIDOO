@@ -99,7 +99,8 @@ export async function findFamilyByParentKeys(
   if (!row?.id) return null;
 
   const expected = await ensureParentAccessKey(admin, row.id);
-  if (pais !== expected) return null;
+  const legacy = legacyParentAccessKey(row.id);
+  if (pais !== expected && pais !== legacy) return null;
   return { id: row.id as string, kids_access_key: casa, parent_access_key: expected };
 }
 

@@ -6,7 +6,7 @@ import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { AUTH_ENABLED } from "@/lib/config";
-import { establishProfileSession } from "@/lib/auth-session";
+import { attachProfileSession } from "@/lib/auth-session";
 import { isSecureRequest, withDevFamilySession, withDevKidsSession } from "@/lib/dev-cookies";
 
 export async function POST(request: Request) {
@@ -55,8 +55,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, role: null });
       }
 
-      await establishProfileSession(child.id);
-      return withDevKidsSession(NextResponse.json({ ok: true, role: "child" }), familyId, child.id, secure);
+      const response = withDevKidsSession(NextResponse.json({ ok: true, role: "child" }), familyId, child.id, secure);
+      await attachProfileSession(response, child.id);
+      return response;
     }
 
     const { data: parent } = await admin
@@ -72,8 +73,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, role: null });
     }
 
-    await establishProfileSession(parent.id);
-    return withDevFamilySession(NextResponse.json({ ok: true, role: "parent" }), familyId, secure);
+    const response = withDevFamilySession(NextResponse.json({ ok: true, role: "parent" }), familyId, secure);
+    await attachProfileSession(response, parent.id);
+    return response;
   } catch {
     return NextResponse.json({ ok: false, role: null });
   }

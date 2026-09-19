@@ -94,12 +94,12 @@ export async function updateSession(request: NextRequest) {
   if (isFamilyLogin && authed) {
     if (admin) return redirect("/admin");
     if (role === "child") {
-      if (isKidsEntry && request.nextUrl.searchParams.get("trocar") === "1") {
-        return supabaseResponse;
+      if (isKidsEntry && request.nextUrl.searchParams.get("trocar") !== "1") {
+        return redirect("/app/kids");
       }
-      return redirect("/app/kids");
+      return supabaseResponse;
     }
-    if (isParentRole(role)) return redirect("/app");
+    if (isParentRole(role) && !isKidsEntry) return redirect("/app");
   }
 
   return supabaseResponse;

@@ -64,7 +64,7 @@ export default async function KidsLayout({
           <span />
         )}
         <div className="flex shrink-0 items-center gap-2">
-          <Link href="/entrar?trocar=1" className="rounded-2xl bg-white/20 px-3 py-2 text-sm font-extrabold">
+          <Link href="/entrar?trocar=1" className="hidden rounded-2xl bg-white/20 px-3 py-2 text-sm font-extrabold">
             Trocar
           </Link>
           <SignOutButton label="Sair" redirectTo="/entrar" />

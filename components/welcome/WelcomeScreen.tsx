@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import welcomeHero from "@/img/logoDelogin.png";
 import { BrandLogo } from "@/components/BrandLogo";
-import { ResumeDeviceSession } from "@/components/auth/ResumeDeviceSession";
 import { EnterTestAppButton } from "@/components/dev/EnterTestAppButton";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 
@@ -43,11 +42,10 @@ export function WelcomeScreen() {
             Comece pelo cadastro da família
           </h1>
           <p className="mx-auto mt-2 max-w-sm text-center text-sm text-navy/65 sm:text-base">
-            Sou pai ou mãe: crio a família. O próximo responsável entra com as chaves CASA e PAIS.
+            Diversão e segurança em só lugar
           </p>
 
           <div className="mt-6 flex flex-col gap-3">
-            <ResumeDeviceSession />
             <Link
               href="/cadastro"
               className="rounded-full bg-success px-5 py-3.5 text-center text-lg font-extrabold text-white shadow-sm"

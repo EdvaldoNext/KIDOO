@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
-import { establishProfileSession } from "@/lib/auth-session";
+import { attachProfileSession } from "@/lib/auth-session";
 import { familyRole, type AppClaims } from "@/lib/auth";
 import { findFamilyByKidsKey } from "@/lib/kids-access";
 import { isSecureRequest, withDevKidsSession } from "@/lib/dev-cookies";
@@ -58,12 +58,13 @@ export async function POST(request: Request) {
     }
 
     const secure = isSecureRequest(request);
+    const response = withDevKidsSession(NextResponse.json({ ok: true }), allowedFamilyId, child.id, secure);
 
     if (!DEV_BYPASS_AUTH) {
-      await establishProfileSession(child.id);
+      await attachProfileSession(response, child.id);
     }
 
-    return withDevKidsSession(NextResponse.json({ ok: true }), allowedFamilyId, child.id, secure);
+    return response;
   } catch {
     return NextResponse.json(
       { error: "Não foi possível entrar. Tente de novo." },
