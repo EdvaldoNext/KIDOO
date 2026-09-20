@@ -10,7 +10,17 @@ function redirectTo(request: NextRequest, pathname: string) {
   return NextResponse.redirect(url);
 }
 
+const PASSTHROUGH_AUTH_PATHS = new Set([
+  "/api/auth/logout",
+  "/api/auth/leave-session",
+  "/api/auth/kids-logout",
+]);
+
 export async function proxy(request: NextRequest) {
+  if (PASSTHROUGH_AUTH_PATHS.has(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   if (!AUTH_ENABLED) {
     const path = request.nextUrl.pathname;
     const hasChild = Boolean(request.cookies.get(DEV_CHILD_COOKIE)?.value);

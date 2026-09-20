@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import { KidooLocation, isNativeAndroid } from "@/lib/native-location";
 
 export function SignOutButton({
@@ -13,28 +12,22 @@ export function SignOutButton({
   forgetDevice?: boolean;
   keepAuth?: boolean;
 }) {
+  const action = keepAuth ? "/api/auth/leave-session" : "/api/auth/logout";
+
   return (
-    <button
-      type="button"
-      className="shrink-0 rounded-lg bg-white/15 px-3 py-1.5 text-sm font-bold"
-      onClick={async () => {
+    <form
+      action={action}
+      method="POST"
+      onSubmit={() => {
         if (isNativeAndroid()) {
-          await KidooLocation.stop();
-        }
-        try {
-          if (keepAuth) {
-            await fetch("/api/auth/leave-session", { method: "POST" });
-          } else {
-            await fetch("/api/auth/logout", { method: "POST" });
-            const supabase = createClient();
-            await supabase.auth.signOut({ scope: "local" });
-          }
-        } finally {
-          window.location.replace(redirectTo);
+          void KidooLocation.stop();
         }
       }}
     >
-      {label}
-    </button>
+      <input type="hidden" name="next" value={redirectTo} />
+      <button type="submit" className="shrink-0 rounded-lg bg-white/15 px-3 py-1.5 text-sm font-bold">
+        {label}
+      </button>
+    </form>
   );
 }
