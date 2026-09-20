@@ -56,7 +56,7 @@ export function PlatformSettingsForm({
       </label>
       <label className="block text-sm font-semibold">
         Free — retenção fotos (dias)
-        <input name="free_retention" type="number" defaultValue={planLimits.free?.photo_retention_days ?? 30} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-2" />
+        <input name="free_retention" type="number" defaultValue={planLimits.free?.photo_retention_days ?? 15} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-2" />
       </label>
       <label className="block text-sm font-semibold">
         Família — filhos
@@ -64,12 +64,15 @@ export function PlatformSettingsForm({
       </label>
       <label className="block text-sm font-semibold">
         Família — retenção fotos (dias)
-        <input name="family_retention" type="number" defaultValue={planLimits.family?.photo_retention_days ?? 180} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-2" />
+        <input name="family_retention" type="number" defaultValue={planLimits.family?.photo_retention_days ?? 15} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-2" />
       </label>
       <label className="block text-sm font-semibold">
         Plus — retenção fotos (dias)
-        <input name="plus_retention" type="number" defaultValue={planLimits.plus?.photo_retention_days ?? 730} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-2" />
+        <input name="plus_retention" type="number" defaultValue={planLimits.plus?.photo_retention_days ?? 15} className="mt-1 w-full rounded-xl border border-navy/10 bg-canvas px-3 py-2" />
       </label>
+      <p className="text-sm text-navy/65">
+        O job diário apaga só o arquivo, 15 dias após a aprovação ou recusa, em todos os planos. O registro fica.
+      </p>
       <label className="flex gap-2 text-sm font-semibold">
         <input name="location_24h" type="checkbox" defaultChecked={featureFlags.location_24h} disabled />
         Feature 24h (bloqueada no MVP)

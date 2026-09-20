@@ -52,7 +52,7 @@ export default async function ParentLayout({
           <Link href="/app" aria-label="KIDOO, ir para hoje" className="shrink-0">
             <BrandLogo size="nav" wordmark={false} className="ring-2 ring-white shadow-lg" />
           </Link>
-          <SignOutButton label="Sair" />
+          <SignOutButton label="Sair" redirectTo="/" />
         </div>
         <ParentNav waitingCount={waitingCount} pointsLabel={pointsLabel} />
       </header>

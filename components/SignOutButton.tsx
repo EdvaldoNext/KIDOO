@@ -5,8 +5,7 @@ import { KidooLocation, isNativeAndroid } from "@/lib/native-location";
 
 export function SignOutButton({
   label = "Sair",
-  redirectTo = "/login",
-  forgetDevice = false,
+  redirectTo = "/",
   keepAuth = false,
 }: {
   label?: string;
@@ -22,16 +21,17 @@ export function SignOutButton({
         if (isNativeAndroid()) {
           await KidooLocation.stop();
         }
-        if (keepAuth) {
-          await fetch("/api/auth/leave-session", { method: "POST" });
-        } else {
-          if (forgetDevice) {
-            await fetch("/api/auth/kids-logout", { method: "POST" });
+        try {
+          if (keepAuth) {
+            await fetch("/api/auth/leave-session", { method: "POST" });
+          } else {
+            await fetch("/api/auth/logout", { method: "POST" });
+            const supabase = createClient();
+            await supabase.auth.signOut({ scope: "local" });
           }
-          const supabase = createClient();
-          await supabase.auth.signOut();
+        } finally {
+          window.location.replace(redirectTo);
         }
-        window.location.href = redirectTo;
       }}
     >
       {label}

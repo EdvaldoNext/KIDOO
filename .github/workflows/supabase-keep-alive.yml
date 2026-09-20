@@ -1,0 +1,67 @@
+# Pings the Supabase project every day so the Free Plan does not pause
+# after 7 days of inactivity. Schedule is UTC (11:00 = 08:00 Brasília).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+#
+# The schedule only runs on the default branch. Use "Run workflow" to test.
+
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-keep-alive
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  keep-alive:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call keep_alive RPC
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
+            echo "Missing GitHub secrets: NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+            exit 1
+          fi
+
+          base="${SUPABASE_URL%/}"
+          headers=(
+            -H "apikey: ${SUPABASE_KEY}"
+            -H "Authorization: Bearer ${SUPABASE_KEY}"
+            -H "Content-Type: application/json"
+          )
+
+          # Real SELECT now() when the keep_alive RPC is deployed.
+          if curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --max-time 30 \
+            -X POST "${base}/rest/v1/rpc/keep_alive" \
+            "${headers[@]}"; then
+            echo
+            echo "Supabase keep-alive succeeded via keep_alive RPC."
+            exit 0
+          fi
+
+          echo
+          echo "RPC unavailable, falling back to PostgREST root."
+
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --max-time 30 \
+            "${base}/rest/v1/" \
+            "${headers[@]}"
+
+          echo
+          echo "Supabase keep-alive succeeded via PostgREST."

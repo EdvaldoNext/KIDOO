@@ -13,7 +13,9 @@ export default function PrivacyPage() {
       </p>
       <p>
         Coletamos apenas o necessário: nome/apelido, faixa etária, fotos das tarefas, horário do servidor e, quando
-        o aparelho permitir, o GPS no momento da foto. A foto pode ser enviada sem localização.
+        o aparelho permitir, o GPS no momento da foto. A foto pode ser enviada sem localização. Cada foto é apagada
+        automaticamente 15 dias após a aprovação ou a recusa; pontos, data, local e notas do filho permanecem no
+        histórico.
       </p>
       <p>
         O rastreador ao vivo é opcional e só liga com consentimento dos pais. No app Android KIDOO Filhos, a

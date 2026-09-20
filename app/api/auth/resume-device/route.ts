@@ -31,11 +31,9 @@ export async function POST(request: Request) {
   if (isParentRole(role)) {
     return NextResponse.json({ ok: true, role: "parent" });
   }
-  if (role === "child") {
-    return NextResponse.json({ ok: true, role: "child" });
-  }
 
   if (!familyId) {
+    if (role === "child") return NextResponse.json({ ok: true, role: "child" });
     return NextResponse.json({ ok: false, role: null });
   }
 
@@ -55,9 +53,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, role: null });
       }
 
-      const response = withDevKidsSession(NextResponse.json({ ok: true, role: "child" }), familyId, child.id, secure);
-      await attachProfileSession(response, child.id);
-      return response;
+      return withDevKidsSession(NextResponse.json({ ok: true, role: "child" }), familyId, child.id, secure);
+    }
+
+    if (role === "child") {
+      return NextResponse.json({ ok: true, role: "child" });
     }
 
     const { data: parent } = await admin

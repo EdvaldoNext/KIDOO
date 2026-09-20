@@ -48,19 +48,19 @@ export function withDevFamilySession(response: NextResponse, familyId: string, s
   return response;
 }
 
-export function clearDevChildCookie(response: NextResponse) {
-  response.cookies.set(DEV_CHILD_COOKIE, "", { ...DEV_COOKIE_OPTIONS, maxAge: 0 });
+export function clearDevChildCookie(response: NextResponse, secure = false) {
+  response.cookies.set(DEV_CHILD_COOKIE, "", { ...deviceCookieOptions(secure), maxAge: 0 });
   return response;
 }
 
-export function clearDeviceCookies(response: NextResponse) {
-  const expired = { ...DEV_COOKIE_OPTIONS, maxAge: 0 };
+export function clearDeviceCookies(response: NextResponse, secure = false) {
+  const expired = { ...deviceCookieOptions(secure), maxAge: 0 };
   response.cookies.set(DEV_FAMILY_COOKIE, "", expired);
   response.cookies.set(DEV_CHILD_COOKIE, "", expired);
   return response;
 }
 
 /** Leave the panel but keep this phone linked to the family. */
-export function keepFamilyDevice(response: NextResponse) {
-  return clearDevChildCookie(response);
+export function keepFamilyDevice(response: NextResponse, secure = false) {
+  return clearDevChildCookie(response, secure);
 }

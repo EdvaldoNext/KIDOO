@@ -84,7 +84,9 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
     return (
       <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-navy/5">
         <p className="font-bold">Nenhum registro ainda.</p>
-        <p className="mt-2 text-sm text-navy/65">Quando um filho concluir uma tarefa, a foto e o local aparecem aqui.</p>
+        <p className="mt-2 text-sm text-navy/65">
+          Quando um filho concluir uma tarefa, a foto e o local aparecem aqui. A foto some em 15 dias.
+        </p>
       </div>
     );
   }

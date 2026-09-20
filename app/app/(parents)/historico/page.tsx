@@ -65,11 +65,11 @@ export default async function HistoryPage() {
         subtitle={
           items.length === 0
             ? "Quando alguém concluir uma tarefa, a foto e o local aparecem aqui."
-            : "Foto, data e local de cada tarefa concluída."
+            : "Data e local ficam. A foto some 15 dias depois da aprovação ou recusa."
         }
       />
       <ParentTrustStrip aside="Os pontos já ganhos ficam.">
-        Excluir um registro apaga a foto deste histórico.
+        Cada foto some sozinha 15 dias depois da aprovação. Excluir um registro apaga a foto agora.
       </ParentTrustStrip>
       <HistoryList key={items.map((item) => item.id).join(",")} items={items} />
     </div>

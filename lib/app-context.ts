@@ -76,12 +76,11 @@ export async function getAppContext(): Promise<AppContext> {
   const claims = data?.claims as AppClaims | undefined;
   const role = familyRole(claims) as UserRole | null;
   const userId = claims?.sub ?? null;
-  let familyId = claims?.app_metadata?.family_id ?? null;
-  const ownerId = isParentRole(role) ? userId : null;
-  let childId = role === "child" ? userId : null;
+  const jwtFamilyId = claims?.app_metadata?.family_id ?? null;
 
   const cookieStore = await cookies();
   const cookieChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
+  let cookieChild: { id: string; family_id: string } | null = null;
   if (cookieChildId) {
     const admin = createServiceClient();
     const { data: child } = await admin
@@ -90,18 +89,38 @@ export async function getAppContext(): Promise<AppContext> {
       .eq("id", cookieChildId)
       .eq("role", "child")
       .maybeSingle();
-    if (child && (!familyId || child.family_id === familyId)) {
-      childId = child.id;
-      familyId = familyId ?? child.family_id;
-    }
+    cookieChild = child;
+  }
+
+  if (isParentRole(role)) {
+    const sameFamily = cookieChild && jwtFamilyId && cookieChild.family_id === jwtFamilyId;
+    return {
+      supabase,
+      familyId: jwtFamilyId,
+      userId,
+      ownerId: userId,
+      childId: sameFamily ? cookieChild.id : null,
+      devMode: false,
+    };
+  }
+
+  if (cookieChild) {
+    return {
+      supabase: createServiceClient(),
+      familyId: cookieChild.family_id,
+      userId: cookieChild.id,
+      ownerId: null,
+      childId: cookieChild.id,
+      devMode: false,
+    };
   }
 
   return {
     supabase,
-    familyId,
+    familyId: jwtFamilyId,
     userId,
-    ownerId,
-    childId,
+    ownerId: null,
+    childId: role === "child" ? userId : null,
     devMode: false,
   };
 }

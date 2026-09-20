@@ -24,11 +24,17 @@ export async function GET() {
       return childrenForFamily(familyId);
     }
 
+    const cookieStore = await cookies();
+    const fromCookie = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
+    if (fromCookie) {
+      return childrenForFamily(fromCookie);
+    }
+
     const supabase = await createClient();
     const { data } = await supabase.auth.getClaims();
     const familyId = data?.claims?.app_metadata?.family_id as string | undefined;
     const role = familyRole(data?.claims as AppClaims | undefined);
-    if (!familyId || role !== "child") {
+    if (!familyId || (role !== "child" && role !== "owner" && role !== "parent")) {
       return NextResponse.json({ error: "Digite a chave da família." }, { status: 401 });
     }
     return childrenForFamily(familyId);

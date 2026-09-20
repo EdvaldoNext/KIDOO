@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { createServiceClient } from "@/utils/supabase/admin";
+import { isSecureRequest, withDevKidsSession } from "@/lib/dev-cookies";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { code?: string; pin?: string };
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const admin = createServiceClient();
     const { data: profile, error } = await admin
       .from("profiles")
-      .select("id, pin_hash, role")
+      .select("id, pin_hash, role, family_id")
       .eq("invite_code", code)
       .eq("role", "child")
       .maybeSingle();
@@ -33,32 +33,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Código ou PIN inválidos." }, { status: 401 });
     }
 
-    const { data: userData, error: userError } = await admin.auth.admin.getUserById(profile.id);
-    const email = userData.user?.email;
-    if (userError || !email) {
-      return NextResponse.json({ error: "Não foi possível entrar. Tente de novo." }, { status: 500 });
-    }
-
-    const { data: link, error: linkError } = await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-
-    if (linkError || !link.properties?.hashed_token) {
-      return NextResponse.json({ error: "Não foi possível entrar. Tente de novo." }, { status: 500 });
-    }
-
-    const supabase = await createClient();
-    const { error: otpError } = await supabase.auth.verifyOtp({
-      type: "magiclink",
-      token_hash: link.properties.hashed_token,
-    });
-
-    if (otpError) {
-      return NextResponse.json({ error: "Não foi possível entrar. Tente de novo." }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true });
+    return withDevKidsSession(
+      NextResponse.json({ ok: true }),
+      profile.family_id,
+      profile.id,
+      isSecureRequest(request),
+    );
   } catch {
     return NextResponse.json(
       { error: "Login de filho ainda não está configurado no servidor." },
