@@ -95,11 +95,7 @@ export default async function LocationPage() {
         <div className="rounded-2xl bg-white p-6 text-navy/70 ring-1 ring-navy/5">
           <p className="font-bold">Nenhuma localização ainda.</p>
           <p className="mt-2 text-sm">
-            Quando um filho concluir uma tarefa com GPS ativo, o mapa aparece aqui. Dá para testar em{" "}
-            <Link href="/app/kids" className="font-bold text-royal underline">
-              Tarefas (filhos)
-            </Link>
-            .
+            Quando um filho concluir uma tarefa com GPS ativo, o mapa aparece aqui.
           </p>
         </div>
       ) : (

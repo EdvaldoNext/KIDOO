@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
-import { attachProfileSession } from "@/lib/auth-session";
+import { attachProfileSession, syncProfileAuthClaims } from "@/lib/auth-session";
 import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { findFamilyByParentKeys } from "@/lib/parent-invite";
 
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Esta família ainda não tem responsável." }, { status: 404 });
     }
 
+    await syncProfileAuthClaims(parent.id);
     await attachProfileSession(response, parent.id);
     return response;
   } catch (error) {

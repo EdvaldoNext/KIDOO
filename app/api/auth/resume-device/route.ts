@@ -6,7 +6,7 @@ import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { AUTH_ENABLED } from "@/lib/config";
-import { attachProfileSession } from "@/lib/auth-session";
+import { attachChildDeviceSession, attachProfileSession, syncProfileAuthClaims } from "@/lib/auth-session";
 import { isSecureRequest, SIGNED_OUT_COOKIE, withDevFamilySession, withDevKidsSession } from "@/lib/dev-cookies";
 
 export async function POST(request: Request) {
@@ -56,7 +56,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, role: null });
       }
 
-      return withDevKidsSession(NextResponse.json({ ok: true, role: "child" }), familyId, child.id, secure);
+      return attachChildDeviceSession(
+        NextResponse.json({ ok: true, role: "child" }),
+        familyId,
+        child.id,
+        secure,
+      );
     }
 
     if (role === "child") {
@@ -77,6 +82,7 @@ export async function POST(request: Request) {
     }
 
     const response = withDevFamilySession(NextResponse.json({ ok: true, role: "parent" }), familyId, secure);
+    await syncProfileAuthClaims(parent.id);
     await attachProfileSession(response, parent.id);
     return response;
   } catch {

@@ -75,15 +75,30 @@ export async function getAppContext(): Promise<AppContext> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims as AppClaims | undefined;
-  const role = familyRole(claims) as UserRole | null;
+  const jwtRole = familyRole(claims) as UserRole | null;
   const userId = claims?.sub ?? null;
-  const jwtFamilyId = claims?.app_metadata?.family_id ?? null;
+  const jwtFamilyId = (claims?.app_metadata?.family_id as string | null | undefined) ?? null;
+
+  let role = jwtRole;
+  let familyId = jwtFamilyId;
+
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("family_id, role")
+      .eq("id", userId)
+      .maybeSingle();
+    if (profile) {
+      role = (profile.role as UserRole) ?? jwtRole;
+      familyId = profile.family_id ?? jwtFamilyId;
+    }
+  }
 
   if (isParentRole(role)) {
-    const sameFamily = cookieChild && jwtFamilyId && cookieChild.family_id === jwtFamilyId;
+    const sameFamily = cookieChild && familyId && cookieChild.family_id === familyId;
     return {
       supabase,
-      familyId: jwtFamilyId,
+      familyId,
       userId,
       ownerId: userId,
       childId: sameFamily && cookieChild ? cookieChild.id : null,
@@ -104,7 +119,7 @@ export async function getAppContext(): Promise<AppContext> {
 
   return {
     supabase,
-    familyId: jwtFamilyId,
+    familyId,
     userId,
     ownerId: null,
     childId: role === "child" ? userId : null,

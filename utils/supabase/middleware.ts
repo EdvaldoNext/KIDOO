@@ -40,6 +40,10 @@ export async function updateSession(request: NextRequest) {
   const claims = (data?.claims ?? null) as AppClaims | null;
   const path = request.nextUrl.pathname;
 
+  if (path.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
   const admin = isPlatformAdmin(claims);
   const role = familyRole(claims);
   const authed = Boolean(claims?.sub);

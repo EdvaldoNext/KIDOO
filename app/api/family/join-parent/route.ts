@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
+import { attachProfileSession, syncProfileAuthClaims } from "@/lib/auth-session";
+import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { findFamilyByParentKeys } from "@/lib/parent-invite";
 
 function alreadyRegistered(error: { message?: string; code?: string } | null) {
@@ -126,7 +128,21 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, family_id: family.id });
+    const response = clearSignedOut(
+      withDevFamilySession(
+        NextResponse.json({ ok: true, family_id: family.id }),
+        family.id,
+        isSecureRequest(request),
+      ),
+      isSecureRequest(request),
+    );
+    try {
+      await syncProfileAuthClaims(userId);
+      await attachProfileSession(response, userId);
+    } catch (error) {
+      console.error("join-parent session", error);
+    }
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível entrar na família.";
     return NextResponse.json({ error: message }, { status: 400 });

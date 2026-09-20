@@ -6,7 +6,8 @@ import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { familyRole, type AppClaims } from "@/lib/auth";
 import { findFamilyByKidsKey } from "@/lib/kids-access";
-import { isSecureRequest, withDevKidsSession } from "@/lib/dev-cookies";
+import { attachChildDeviceSession } from "@/lib/auth-session";
+import { isSecureRequest } from "@/lib/dev-cookies";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { key?: string; child_id?: string };
@@ -56,8 +57,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Chave inválida." }, { status: 401 });
     }
 
-    const secure = isSecureRequest(request);
-    return withDevKidsSession(NextResponse.json({ ok: true }), allowedFamilyId, child.id, secure);
+    return attachChildDeviceSession(
+      NextResponse.json({ ok: true }),
+      allowedFamilyId,
+      child.id,
+      isSecureRequest(request),
+    );
   } catch {
     return NextResponse.json(
       { error: "Não foi possível entrar. Tente de novo." },

@@ -3,7 +3,42 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { createProfileLoginToken } from "@/lib/kids-access";
-import { DEV_COOKIE_MAX_AGE } from "@/lib/dev-cookies";
+import {
+  DEV_COOKIE_MAX_AGE,
+  clearSignedOut,
+  withDevKidsSession,
+} from "@/lib/dev-cookies";
+
+export async function syncProfileAuthClaims(profileId: string) {
+  const admin = createServiceClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, family_id, role")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (!profile?.family_id) return profile;
+
+  const { data: userData } = await admin.auth.admin.getUserById(profileId);
+  const platformAdmin = userData.user?.app_metadata?.platform_admin === true;
+  const current = userData.user?.app_metadata ?? {};
+  if (
+    current.family_id === profile.family_id &&
+    current.role === profile.role &&
+    Boolean(current.platform_admin) === platformAdmin
+  ) {
+    return profile;
+  }
+
+  await admin.auth.admin.updateUserById(profileId, {
+    app_metadata: {
+      role: profile.role,
+      family_id: profile.family_id,
+      platform_admin: platformAdmin,
+    },
+  });
+  return profile;
+}
 
 export async function emailPasswordMatches(email: string, password: string) {
   const admin = createServiceClient();
@@ -61,4 +96,20 @@ export async function attachProfileSession(response: NextResponse, profileId: st
   if (!retry.error) return response;
 
   throw new Error(error.message || "Não foi possível entrar. Tente de novo.");
+}
+
+export async function attachChildDeviceSession(
+  response: NextResponse,
+  familyId: string,
+  childId: string,
+  secure: boolean,
+) {
+  clearSignedOut(withDevKidsSession(response, familyId, childId, secure), secure);
+  try {
+    await syncProfileAuthClaims(childId);
+    await attachProfileSession(response, childId);
+  } catch (error) {
+    console.error("child device session", error);
+  }
+  return response;
 }

@@ -101,6 +101,14 @@ export async function POST(request: Request) {
         );
       }
 
+      await admin.auth.admin.updateUserById(userId, {
+        app_metadata: {
+          role: profile.role ?? "owner",
+          family_id: profile.family_id,
+          platform_admin: false,
+        },
+      });
+
       const response = clearSignedOut(
         withDevFamilySession(
           NextResponse.json({ ok: true, family_id: profile.family_id, existing: true }),

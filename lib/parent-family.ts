@@ -5,23 +5,10 @@ import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { isParentRole } from "@/lib/auth";
 
-export async function requireParentFamilyId() {
-  if (DEV_BYPASS_AUTH) {
-    const cookieStore = await cookies();
-    return cookieStore.get(DEV_FAMILY_COOKIE)?.value ?? null;
-  }
-
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const role = data?.claims?.app_metadata?.role;
-  const familyId = data?.claims?.app_metadata?.family_id as string | undefined;
-  if (!familyId || !isParentRole(role)) return null;
-  return familyId;
-}
-
 export async function requireParentActor() {
   if (DEV_BYPASS_AUTH) {
-    const familyId = await requireParentFamilyId();
+    const cookieStore = await cookies();
+    const familyId = cookieStore.get(DEV_FAMILY_COOKIE)?.value ?? null;
     if (!familyId) return null;
 
     const admin = createServiceClient();
@@ -39,9 +26,26 @@ export async function requireParentActor() {
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  const role = data?.claims?.app_metadata?.role;
-  const familyId = data?.claims?.app_metadata?.family_id as string | undefined;
   const parentId = data?.claims?.sub as string | undefined;
-  if (!familyId || !parentId || !isParentRole(role)) return null;
+  if (!parentId) return null;
+
+  const jwtRole = data?.claims?.app_metadata?.role;
+  const jwtFamilyId = data?.claims?.app_metadata?.family_id as string | undefined;
+
+  const admin = createServiceClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("family_id, role")
+    .eq("id", parentId)
+    .maybeSingle();
+
+  const role = profile?.role ?? jwtRole;
+  const familyId = profile?.family_id ?? jwtFamilyId;
+  if (!familyId || !isParentRole(role)) return null;
   return { familyId, parentId };
+}
+
+export async function requireParentFamilyId() {
+  const actor = await requireParentActor();
+  return actor?.familyId ?? null;
 }

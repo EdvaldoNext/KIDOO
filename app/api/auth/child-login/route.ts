@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
-import { isSecureRequest, withDevKidsSession } from "@/lib/dev-cookies";
+import { attachChildDeviceSession } from "@/lib/auth-session";
+import { isSecureRequest } from "@/lib/dev-cookies";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { code?: string; pin?: string };
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Código ou PIN inválidos." }, { status: 401 });
     }
 
-    return withDevKidsSession(
+    return attachChildDeviceSession(
       NextResponse.json({ ok: true }),
       profile.family_id,
       profile.id,

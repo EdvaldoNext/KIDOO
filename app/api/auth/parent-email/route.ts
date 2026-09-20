@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { familyRole, isParentRole, isPlatformAdmin, type AppClaims } from "@/lib/auth";
-import { attachProfileSession, emailPasswordMatches } from "@/lib/auth-session";
+import { attachProfileSession, emailPasswordMatches, syncProfileAuthClaims } from "@/lib/auth-session";
 import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { createServiceClient } from "@/utils/supabase/admin";
 
@@ -73,6 +73,7 @@ export async function POST(request: Request) {
     }
     clearSignedOut(response, secure);
 
+    await syncProfileAuthClaims(user.id);
     await attachProfileSession(response, user.id);
     return response;
   } catch (error) {

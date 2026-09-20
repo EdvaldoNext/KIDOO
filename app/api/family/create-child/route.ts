@@ -1,47 +1,23 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
 import { createServiceClient } from "@/utils/supabase/admin";
-import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
-import { isParentRole, type AgeGroup } from "@/lib/auth";
+import { type AgeGroup } from "@/lib/auth";
 import { ensureKidsAccessKey } from "@/lib/kids-access";
+import { requireParentActor } from "@/lib/parent-family";
 
 function randomPassword() {
   return crypto.randomUUID() + crypto.randomUUID();
 }
 
 export async function POST(request: Request) {
-  let familyId: string | undefined;
-  let parentId: string | undefined;
+  const actor = await requireParentActor();
+  const familyId = actor?.familyId;
 
-  if (DEV_BYPASS_AUTH) {
-    const cookieStore = await cookies();
-    familyId = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
-
-    if (!familyId) {
-      return NextResponse.json({ error: "Crie uma família em /cadastro primeiro." }, { status: 400 });
-    }
-
-    const admin = createServiceClient();
-    const { data: owner } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("family_id", familyId)
-      .in("role", ["owner", "parent"])
-      .limit(1)
-      .maybeSingle();
-    parentId = owner?.id;
-  } else {
-    const supabase = await createClient();
-    const { data: claimsData } = await supabase.auth.getClaims();
-    const role = claimsData?.claims?.app_metadata?.role;
-    familyId = claimsData?.claims?.app_metadata?.family_id as string | undefined;
-    parentId = claimsData?.claims?.sub as string | undefined;
-
-    if (!parentId || !familyId || !isParentRole(role)) {
-      return NextResponse.json({ error: "Só pais podem adicionar filhos." }, { status: 403 });
-    }
+  if (!familyId) {
+    return NextResponse.json(
+      { error: DEV_BYPASS_AUTH ? "Crie uma família em /cadastro primeiro." : "Só pais podem adicionar filhos." },
+      { status: DEV_BYPASS_AUTH ? 400 : 403 },
+    );
   }
 
   const body = (await request.json()) as {
