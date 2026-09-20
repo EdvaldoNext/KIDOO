@@ -18,7 +18,10 @@ const PASSTHROUGH_AUTH_PATHS = new Set([
 ]);
 
 export async function proxy(request: NextRequest) {
-  if (PASSTHROUGH_AUTH_PATHS.has(request.nextUrl.pathname)) {
+  if (
+    PASSTHROUGH_AUTH_PATHS.has(request.nextUrl.pathname) ||
+    request.nextUrl.pathname.startsWith("/api/")
+  ) {
     return NextResponse.next();
   }
 

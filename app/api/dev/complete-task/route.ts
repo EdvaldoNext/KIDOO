@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   const childId = String(formData.get("child_id") ?? "");
   const kind = String(formData.get("kind") ?? "points") as "points" | "reminder";
   const photo = formData.get("photo");
+  const photoBlob = photo instanceof Blob && photo.size > 0 ? photo : null;
   const latRaw = formData.get("lat");
   const lngRaw = formData.get("lng");
   const locationAvailable = formData.get("location_available") === "true";
@@ -38,14 +39,14 @@ export async function POST(request: Request) {
   const admin = createServiceClient();
   let photoKey: string | null = null;
 
-  if (photo instanceof File && photo.size > 0) {
+  if (photoBlob) {
     photoKey = String(formData.get("photo_key") ?? "");
     const { error: uploadError } = await admin.storage
       .from(STORAGE_BUCKET)
-      .upload(photoKey, photo, { contentType: photo.type || "image/jpeg", upsert: false });
+      .upload(photoKey, photoBlob, { contentType: photoBlob.type || "image/jpeg", upsert: false });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 400 });
+      return NextResponse.json({ error: "Não deu para guardar a foto. Tente de novo." }, { status: 400 });
     }
   }
 

@@ -16,7 +16,7 @@ export type GeoResult = { ok: true; fix: GeoFix } | GeoFailure;
 
 export const PHOTO_GEO_OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
-  timeout: 20000,
+  timeout: 8000,
   maximumAge: 15000,
 };
 
@@ -82,10 +82,25 @@ export function requestBrowserPosition(options: PositionOptions = PHOTO_GEO_OPTI
   const blocked = geoPreconditions();
   if (blocked) return Promise.resolve(blocked);
 
+  const browserTimeout = options.timeout ?? PHOTO_GEO_OPTIONS.timeout ?? 8000;
+  const hardTimeoutMs = browserTimeout + 1500;
+
   return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: GeoResult) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(watchdog);
+      resolve(result);
+    };
+
+    const watchdog = window.setTimeout(() => {
+      finish(failure("timeout", "O GPS demorou. A foto vai mesmo assim."));
+    }, hardTimeoutMs);
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ ok: true, fix: readGeoFix(pos.coords) }),
-      (error) => resolve(mapGeoError(error)),
+      (pos) => finish({ ok: true, fix: readGeoFix(pos.coords) }),
+      (error) => finish(mapGeoError(error)),
       options,
     );
   });

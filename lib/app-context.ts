@@ -71,26 +71,13 @@ export async function getAppContext(): Promise<AppContext> {
     };
   }
 
+  const cookieChild = await resolveChildDevice();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims as AppClaims | undefined;
   const role = familyRole(claims) as UserRole | null;
   const userId = claims?.sub ?? null;
   const jwtFamilyId = claims?.app_metadata?.family_id ?? null;
-
-  const cookieStore = await cookies();
-  const cookieChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
-  let cookieChild: { id: string; family_id: string } | null = null;
-  if (cookieChildId) {
-    const admin = createServiceClient();
-    const { data: child } = await admin
-      .from("profiles")
-      .select("id, family_id")
-      .eq("id", cookieChildId)
-      .eq("role", "child")
-      .maybeSingle();
-    cookieChild = child;
-  }
 
   if (isParentRole(role)) {
     const sameFamily = cookieChild && jwtFamilyId && cookieChild.family_id === jwtFamilyId;
@@ -123,6 +110,22 @@ export async function getAppContext(): Promise<AppContext> {
     childId: role === "child" ? userId : null,
     devMode: false,
   };
+}
+
+export async function resolveChildDevice(): Promise<{ id: string; family_id: string } | null> {
+  const cookieStore = await cookies();
+  const cookieChildId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
+  if (!cookieChildId) return null;
+
+  const admin = createServiceClient();
+  const { data: child } = await admin
+    .from("profiles")
+    .select("id, family_id")
+    .eq("id", cookieChildId)
+    .eq("role", "child")
+    .maybeSingle();
+
+  return child;
 }
 
 export function familyFilter<T extends { eq: (col: string, val: string) => T }>(

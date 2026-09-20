@@ -64,9 +64,12 @@ export function CompleteTask({
   function capture() {
     const video = videoRef.current;
     if (!video) return;
+    const srcW = video.videoWidth || 720;
+    const srcH = video.videoHeight || 960;
+    const scale = Math.min(1, 1280 / Math.max(srcW, srcH));
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 720;
-    canvas.height = video.videoHeight || 960;
+    canvas.width = Math.max(1, Math.round(srcW * scale));
+    canvas.height = Math.max(1, Math.round(srcH * scale));
     const ctx = canvas.getContext("2d");
     ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
     setPhoto(canvas.toDataURL("image/jpeg", 0.72));
@@ -95,14 +98,10 @@ export function CompleteTask({
     setPending(true);
     setError(null);
     const completionId = crypto.randomUUID();
-    let key: string | null = null;
-    let geo = photoGeo;
-    if (!geo?.ok) {
-      geo = await refreshPhotoGeo();
-    }
-    const lat = geo.ok ? geo.fix.lat : null;
-    const lng = geo.ok ? geo.fix.lng : null;
-    const locationAvailable = geo.ok;
+    const geo = photoGeo;
+    const lat = geo?.ok ? geo.fix.lat : null;
+    const lng = geo?.ok ? geo.fix.lng : null;
+    const locationAvailable = Boolean(geo?.ok);
 
     const formData = new FormData();
     formData.set("task_id", task.id);
@@ -115,26 +114,50 @@ export function CompleteTask({
     if (lng != null) formData.set("lng", String(lng));
     if (childNote) formData.set("child_note", childNote);
 
-    if (photo) {
-      key = photoKey(task.family_id, task.assigned_child_id, completionId);
-      formData.set("photo_key", key);
-      const blob = await (await fetch(photo)).blob();
-      formData.set("photo", blob, "task.jpg");
-    }
+    try {
+      if (photo) {
+        formData.set("photo_key", photoKey(task.family_id, task.assigned_child_id, completionId));
+        const blob = await (await fetch(photo)).blob();
+        formData.set("photo", blob, "task.jpg");
+      }
 
-    const response = await fetch(
-      CLIENT_DEV_BYPASS_AUTH ? "/api/dev/complete-task" : "/api/family/complete-task",
-      { method: "POST", body: formData },
-    );
-    const payload = (await response.json()) as { error?: string };
-    if (!response.ok) {
-      setError(payload.error ?? "Não foi possível enviar.");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 45000);
+      let response: Response;
+      try {
+        response = await fetch(
+          CLIENT_DEV_BYPASS_AUTH ? "/api/dev/complete-task" : "/api/family/complete-task",
+          { method: "POST", body: formData, signal: controller.signal },
+        );
+      } finally {
+        window.clearTimeout(timeout);
+      }
+
+      const text = await response.text();
+      let payload: { error?: string } = {};
+      try {
+        payload = JSON.parse(text) as { error?: string };
+      } catch {
+        payload = {};
+      }
+
+      if (!response.ok) {
+        setError(
+          payload.error ??
+            (response.status === 413
+              ? "A foto ficou grande demais. Tire outra."
+              : "Não foi possível enviar."),
+        );
+        return;
+      }
+
+      router.push("/app/kids");
+      router.refresh();
+    } catch {
+      setError("Não foi possível enviar. Confira a internet e tente de novo.");
+    } finally {
       setPending(false);
-      return;
     }
-
-    router.push("/app/kids");
-    router.refresh();
   }
 
   return (
