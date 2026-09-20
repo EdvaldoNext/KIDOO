@@ -17,6 +17,9 @@ type Task = {
   assigned_child_id: string;
 };
 
+/** Preview URL is a blob: so the photo never travels as a data: URL, which the CSP blocks. */
+type CapturedPhoto = { blob: Blob; url: string };
+
 export function CompleteTask({
   task,
   rejectionNote = null,
@@ -26,7 +29,7 @@ export function CompleteTask({
 }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -61,6 +64,11 @@ export function CompleteTask({
     return () => stream?.getTracks().forEach((t) => t.stop());
   }, [photo]);
 
+  useEffect(() => {
+    if (!photo) return;
+    return () => URL.revokeObjectURL(photo.url);
+  }, [photo]);
+
   function capture() {
     const video = videoRef.current;
     if (!video) return;
@@ -72,7 +80,18 @@ export function CompleteTask({
     canvas.height = Math.max(1, Math.round(srcH * scale));
     const ctx = canvas.getContext("2d");
     ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setPhoto(canvas.toDataURL("image/jpeg", 0.72));
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setError("Não deu para preparar a foto. Tente tirar de novo.");
+          return;
+        }
+        setError(null);
+        setPhoto({ blob, url: URL.createObjectURL(blob) });
+      },
+      "image/jpeg",
+      0.72,
+    );
     if (!photoGeo?.ok) {
       setPhotoGeoPending(true);
       void requestBrowserPosition().then((result) => {
@@ -117,8 +136,7 @@ export function CompleteTask({
     try {
       if (photo) {
         formData.set("photo_key", photoKey(task.family_id, task.assigned_child_id, completionId));
-        const blob = await (await fetch(photo)).blob();
-        formData.set("photo", blob, "task.jpg");
+        formData.set("photo", photo.blob, "task.jpg");
       }
 
       const controller = new AbortController();
@@ -153,8 +171,13 @@ export function CompleteTask({
 
       router.push("/app/kids");
       router.refresh();
-    } catch {
-      setError("Não foi possível enviar. Confira a internet e tente de novo.");
+    } catch (sendError) {
+      const aborted = sendError instanceof DOMException && sendError.name === "AbortError";
+      setError(
+        aborted
+          ? "O envio demorou demais. Tente de novo."
+          : "Não foi possível enviar. Tente de novo.",
+      );
     } finally {
       setPending(false);
     }
@@ -195,7 +218,7 @@ export function CompleteTask({
         <video ref={videoRef} autoPlay playsInline className="w-full rounded-3xl bg-navy" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo} alt="Prévia" className="w-full rounded-3xl" />
+        <img src={photo.url} alt="Prévia" className="w-full rounded-3xl" />
       )}
 
       <label className="block font-bold text-navy">
