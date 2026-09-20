@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { attachProfileSession } from "@/lib/auth-session";
-import { isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
+import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { findFamilyByParentKeys } from "@/lib/parent-invite";
 
 export async function POST(request: Request) {
@@ -22,9 +22,12 @@ export async function POST(request: Request) {
     }
 
     const secure = isSecureRequest(request);
-    const response = withDevFamilySession(
-      NextResponse.json({ ok: true, family_id: family.id }),
-      family.id,
+    const response = clearSignedOut(
+      withDevFamilySession(
+        NextResponse.json({ ok: true, family_id: family.id }),
+        family.id,
+        secure,
+      ),
       secure,
     );
 

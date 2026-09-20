@@ -17,6 +17,7 @@ export function FirstSteps({ childCount, hasTask }: FirstStepsProps) {
       text: "Passe a chave CASA no celular dele.",
       cta: "Cadastrar agora",
       locked: false,
+      optional: false,
     },
     {
       done: hasTask,
@@ -25,6 +26,7 @@ export function FirstSteps({ childCount, hasTask }: FirstStepsProps) {
       text: "Ele faz, manda a foto e você aprova.",
       cta: "Criar agora",
       locked: !hasChild,
+      optional: false,
     },
     {
       done: false,

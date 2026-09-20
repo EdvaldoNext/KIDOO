@@ -7,10 +7,13 @@ import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { AUTH_ENABLED } from "@/lib/config";
 import { attachProfileSession } from "@/lib/auth-session";
-import { isSecureRequest, withDevFamilySession, withDevKidsSession } from "@/lib/dev-cookies";
+import { isSecureRequest, SIGNED_OUT_COOKIE, withDevFamilySession, withDevKidsSession } from "@/lib/dev-cookies";
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
+  if (cookieStore.get(SIGNED_OUT_COOKIE)?.value) {
+    return NextResponse.json({ ok: false, role: null });
+  }
   const familyId = cookieStore.get(DEV_FAMILY_COOKIE)?.value;
   const childId = cookieStore.get(DEV_CHILD_COOKIE)?.value;
   const secure = isSecureRequest(request);

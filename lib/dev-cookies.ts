@@ -5,6 +5,9 @@ import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 /** Keep the child/parent identity on the phone after the browser or PWA is closed. */
 export const DEV_COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
 
+/** Set only by Sair. Blocks auto-login until the person signs in again. */
+export const SIGNED_OUT_COOKIE = "kidoo_signed_out";
+
 export const DEV_COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: "lax" as const,
@@ -63,4 +66,14 @@ export function clearDeviceCookies(response: NextResponse, secure = false) {
 /** Leave the panel but keep this phone linked to the family. */
 export function keepFamilyDevice(response: NextResponse, secure = false) {
   return clearDevChildCookie(response, secure);
+}
+
+export function markSignedOut(response: NextResponse, secure = false) {
+  response.cookies.set(SIGNED_OUT_COOKIE, "1", deviceCookieOptions(secure));
+  return response;
+}
+
+export function clearSignedOut(response: NextResponse, secure = false) {
+  response.cookies.set(SIGNED_OUT_COOKIE, "", { ...deviceCookieOptions(secure), maxAge: 0 });
+  return response;
 }

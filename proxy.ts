@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { AUTH_ENABLED } from "@/lib/config";
+import { SIGNED_OUT_COOKIE } from "@/lib/dev-cookies";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 import { updateSession } from "@/utils/supabase/middleware";
 
@@ -23,6 +24,9 @@ export async function proxy(request: NextRequest) {
 
   if (!AUTH_ENABLED) {
     const path = request.nextUrl.pathname;
+    if (request.cookies.get(SIGNED_OUT_COOKIE)?.value && path.startsWith("/app")) {
+      return redirectTo(request, "/");
+    }
     const hasChild = Boolean(request.cookies.get(DEV_CHILD_COOKIE)?.value);
     const switching = request.nextUrl.searchParams.get("trocar") === "1";
 

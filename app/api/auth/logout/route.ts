@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { clearDeviceCookies, isSecureRequest } from "@/lib/dev-cookies";
+import { clearDeviceCookies, isSecureRequest, markSignedOut } from "@/lib/dev-cookies";
 import { safeNextPath } from "@/lib/safe-next-path";
 
 async function nextPath(request: Request, fallback: string) {
@@ -30,5 +30,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return clearDeviceCookies(response, secure);
+  return markSignedOut(clearDeviceCookies(response, secure), secure);
 }

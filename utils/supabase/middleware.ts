@@ -6,6 +6,7 @@ import {
   isPlatformAdmin,
   type AppClaims,
 } from "@/lib/auth";
+import { SIGNED_OUT_COOKIE } from "@/lib/dev-cookies";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,7 +44,9 @@ export async function updateSession(request: NextRequest) {
   const role = familyRole(claims);
   const authed = Boolean(claims?.sub);
   const hasChildCookie = Boolean(request.cookies.get(DEV_CHILD_COOKIE)?.value);
-  const kidsSession = role === "child" || hasChildCookie;
+  const signedOut = Boolean(request.cookies.get(SIGNED_OUT_COOKIE)?.value);
+  const kidsSession = !signedOut && (role === "child" || hasChildCookie);
+  const parentSession = !signedOut && isParentRole(role);
 
   function redirect(to: string) {
     const url = request.nextUrl.clone();
@@ -83,9 +86,9 @@ export async function updateSession(request: NextRequest) {
 
   if (isFamilyApp) {
     if (admin) return redirect("/admin");
-    if (isParentRole(role)) return supabaseResponse;
+    if (parentSession) return supabaseResponse;
     if (kidsSession) return redirect("/app/kids");
-    if (!authed) return redirect("/login");
+    if (signedOut || !authed) return redirect("/");
     return redirect("/onboarding");
   }
 
@@ -93,7 +96,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  if (isFamilyLogin && authed) {
+  if (isFamilyLogin && authed && !signedOut) {
     if (admin) return redirect("/admin");
     if (role === "child" || (isKidsEntry && hasChildCookie)) {
       if (isKidsEntry && request.nextUrl.searchParams.get("trocar") !== "1") {

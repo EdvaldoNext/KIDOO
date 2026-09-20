@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { attachProfileSession, emailPasswordMatches } from "@/lib/auth-session";
-import { isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
+import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { generateKidsAccessKey } from "@/lib/kids-access";
 import { ensureParentAccessKey, familyKeysOnCreate } from "@/lib/parent-invite";
 
@@ -101,9 +101,12 @@ export async function POST(request: Request) {
         );
       }
 
-      const response = withDevFamilySession(
-        NextResponse.json({ ok: true, family_id: profile.family_id, existing: true }),
-        profile.family_id,
+      const response = clearSignedOut(
+        withDevFamilySession(
+          NextResponse.json({ ok: true, family_id: profile.family_id, existing: true }),
+          profile.family_id,
+          isSecureRequest(request),
+        ),
         isSecureRequest(request),
       );
       try {
@@ -170,9 +173,12 @@ export async function POST(request: Request) {
       app_metadata: { role: "owner", family_id: family.id, platform_admin: false },
     });
 
-    const response = withDevFamilySession(
-      NextResponse.json({ ok: true, family_id: family.id }),
-      family.id,
+    const response = clearSignedOut(
+      withDevFamilySession(
+        NextResponse.json({ ok: true, family_id: family.id }),
+        family.id,
+        isSecureRequest(request),
+      ),
       isSecureRequest(request),
     );
 

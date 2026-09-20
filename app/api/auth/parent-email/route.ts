@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { familyRole, isParentRole, isPlatformAdmin, type AppClaims } from "@/lib/auth";
 import { attachProfileSession, emailPasswordMatches } from "@/lib/auth-session";
-import { isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
+import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { createServiceClient } from "@/utils/supabase/admin";
 
 export async function POST(request: Request) {
@@ -67,9 +67,11 @@ export async function POST(request: Request) {
       path: parent ? "/app" : "/onboarding",
     });
 
+    const secure = isSecureRequest(request);
     if (familyId && parent) {
-      withDevFamilySession(response, familyId, isSecureRequest(request));
+      withDevFamilySession(response, familyId, secure);
     }
+    clearSignedOut(response, secure);
 
     await attachProfileSession(response, user.id);
     return response;

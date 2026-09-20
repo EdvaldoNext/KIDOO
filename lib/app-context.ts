@@ -99,7 +99,7 @@ export async function getAppContext(): Promise<AppContext> {
       familyId: jwtFamilyId,
       userId,
       ownerId: userId,
-      childId: sameFamily ? cookieChild.id : null,
+      childId: sameFamily && cookieChild ? cookieChild.id : null,
       devMode: false,
     };
   }
