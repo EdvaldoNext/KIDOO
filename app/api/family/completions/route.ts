@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { decideTaskCompletion } from "@/lib/approve-completion";
 import { createServiceClient } from "@/utils/supabase/admin";
-import { requireParentFamilyId } from "@/lib/parent-family";
+import { requireParentActor, requireParentFamilyId } from "@/lib/parent-family";
 import { STORAGE_BUCKET } from "@/lib/photo-key";
 
 const UUID_RE =
@@ -9,6 +10,43 @@ const UUID_RE =
 function uniqueIds(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return [...new Set(raw.filter((id): id is string => typeof id === "string" && UUID_RE.test(id)))];
+}
+
+export async function POST(request: Request) {
+  const actor = await requireParentActor();
+  if (!actor) {
+    return NextResponse.json({ error: "Só pais podem aprovar fotos." }, { status: 403 });
+  }
+
+  const body = (await request.json().catch(() => null)) as {
+    completion_id?: unknown;
+    approve?: unknown;
+    note?: unknown;
+  } | null;
+
+  const completionId = typeof body?.completion_id === "string" ? body.completion_id : "";
+  if (!UUID_RE.test(completionId) || typeof body?.approve !== "boolean") {
+    return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+  }
+
+  const note =
+    typeof body?.note === "string" && body.note.trim() ? body.note.trim().slice(0, 280) : null;
+
+  try {
+    const result = await decideTaskCompletion(createServiceClient(), {
+      completionId,
+      familyId: actor.familyId,
+      parentId: actor.parentId,
+      approve: body.approve,
+      note,
+    });
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Não foi possível salvar a decisão." }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: Request) {

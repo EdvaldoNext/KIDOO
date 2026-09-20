@@ -1,22 +1,22 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 
 export function ApprovalActions({ completionId }: { completionId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function decide(approve: boolean) {
     setPending(true);
+    setError(null);
     const rejectNote = approve ? null : note.trim() || null;
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      await fetch("/api/dev/approve-completion", {
+    try {
+      const response = await fetch("/api/family/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -25,19 +25,19 @@ export function ApprovalActions({ completionId }: { completionId: string }) {
           note: rejectNote,
         }),
       });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(result.error ?? "Não deu para salvar agora.");
+        return;
+      }
+      setRejecting(false);
+      setNote("");
       router.refresh();
+    } catch {
+      setError("Não deu para salvar agora. Tente de novo.");
+    } finally {
       setPending(false);
-      return;
     }
-
-    const supabase = createClient();
-    await supabase.rpc("approve_completion", {
-      p_completion_id: completionId,
-      p_approve: approve,
-      p_note: rejectNote,
-    });
-    router.refresh();
-    setPending(false);
   }
 
   if (rejecting) {
@@ -69,34 +69,50 @@ export function ApprovalActions({ completionId }: { completionId: string }) {
             onClick={() => {
               setRejecting(false);
               setNote("");
+              setError(null);
             }}
             className="rounded-xl bg-white px-4 py-2 font-bold ring-1 ring-navy/10"
           >
             Cancelar
           </button>
         </div>
+        {error ? (
+          <p className="text-sm font-semibold text-alert" role="status" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => void decide(true)}
-        className="rounded-xl bg-success px-4 py-2 font-bold text-navy disabled:opacity-60"
-      >
-        {pending ? "Salvando..." : "Aprovar"}
-      </button>
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => setRejecting(true)}
-        className="rounded-xl bg-alert px-4 py-2 font-bold text-white disabled:opacity-60"
-      >
-        Pedir ajuste
-      </button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => void decide(true)}
+          className="rounded-xl bg-success px-4 py-2 font-bold text-navy disabled:opacity-60"
+        >
+          {pending ? "Salvando..." : "Aprovar"}
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            setRejecting(true);
+            setError(null);
+          }}
+          className="rounded-xl bg-alert px-4 py-2 font-bold text-white disabled:opacity-60"
+        >
+          Pedir ajuste
+        </button>
+      </div>
+      {error ? (
+        <p className="text-sm font-semibold text-alert" role="status" aria-live="polite">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
