@@ -34,6 +34,7 @@ const nextConfig: NextConfig = {
               "media-src 'self' blob:",
               "worker-src 'self'",
               "manifest-src 'self'",
+              "frame-src https://www.openstreetmap.org",
               "frame-ancestors 'none'",
             ].join("; "),
           },

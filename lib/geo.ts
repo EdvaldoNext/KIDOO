@@ -20,10 +20,30 @@ export const PHOTO_GEO_OPTIONS: PositionOptions = {
   maximumAge: 15000,
 };
 
+/** Fast network/cached fix, then a precise retry when the first one fails. */
+export const PHOTO_GEO_FAST: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 4000,
+  maximumAge: 60_000,
+};
+
+export const PHOTO_GEO_PRECISE: PositionOptions = {
+  enableHighAccuracy: true,
+  timeout: 8000,
+  maximumAge: 0,
+};
+
 export const LIVE_GEO_OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
   timeout: 20000,
   maximumAge: 10000,
+};
+
+/** First point when the child opens the app: accept a fix from the last minute. */
+export const OPEN_GEO_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  timeout: 15000,
+  maximumAge: 60_000,
 };
 
 function failure(code: GeoFailure["code"], message: string): GeoFailure {
@@ -57,12 +77,12 @@ function mapGeoError(error: GeolocationPositionError): GeoFailure {
     );
   }
   if (error.code === error.POSITION_UNAVAILABLE) {
-    return failure("unavailable", "GPS indisponível agora. A foto vai mesmo assim.");
+    return failure("unavailable", "GPS indisponível agora.");
   }
   if (error.code === error.TIMEOUT) {
-    return failure("timeout", "O GPS demorou. A foto vai mesmo assim.");
+    return failure("timeout", "O GPS demorou.");
   }
-  return failure("unknown", "Não deu para pegar o local. A foto vai mesmo assim.");
+  return failure("unknown", "Não deu para pegar o local.");
 }
 
 export function geoPreconditions(): GeoFailure | null {
@@ -95,7 +115,7 @@ export function requestBrowserPosition(options: PositionOptions = PHOTO_GEO_OPTI
     };
 
     const watchdog = window.setTimeout(() => {
-      finish(failure("timeout", "O GPS demorou. A foto vai mesmo assim."));
+      finish(failure("timeout", "O GPS demorou."));
     }, hardTimeoutMs);
 
     navigator.geolocation.getCurrentPosition(
@@ -104,6 +124,15 @@ export function requestBrowserPosition(options: PositionOptions = PHOTO_GEO_OPTI
       options,
     );
   });
+}
+
+const PHOTO_STOP = new Set<GeoFailure["code"]>(["insecure", "unsupported", "denied"]);
+
+/** Fast fix first. A precise retry runs only when the phone has GPS and the fast read missed. */
+export async function requestPhotoPosition(): Promise<GeoResult> {
+  const quick = await requestBrowserPosition(PHOTO_GEO_FAST);
+  if (quick.ok || PHOTO_STOP.has(quick.code)) return quick;
+  return requestBrowserPosition(PHOTO_GEO_PRECISE);
 }
 
 export function watchBrowserPosition(

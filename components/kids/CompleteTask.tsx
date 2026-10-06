@@ -6,7 +6,7 @@ import { KidsMascot } from "@/components/kids/KidsMascot";
 import { RejectionFeedback } from "@/components/tasks/RejectionFeedback";
 import { photoKey } from "@/lib/photo-key";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
-import { requestBrowserPosition, type GeoResult } from "@/lib/geo";
+import { requestPhotoPosition, type GeoResult } from "@/lib/geo";
 
 type Task = {
   id: string;
@@ -35,13 +35,21 @@ export function CompleteTask({
   const [pending, setPending] = useState(false);
   const [photoGeo, setPhotoGeo] = useState<GeoResult | null>(null);
   const [photoGeoPending, setPhotoGeoPending] = useState(true);
+  const photoGeoRequest = useRef<Promise<GeoResult> | null>(null);
   const mustPhoto = task.require_photo || task.kind === "points";
   const childNote = note.trim() || null;
 
+  function trackPhotoGeo() {
+    const request = requestPhotoPosition();
+    photoGeoRequest.current = request;
+    setPhotoGeoPending(true);
+    return request;
+  }
+
   useEffect(() => {
     let cancelled = false;
-    setPhotoGeoPending(true);
-    void requestBrowserPosition().then((result) => {
+    const request = trackPhotoGeo();
+    void request.then((result) => {
       if (cancelled) return;
       setPhotoGeo(result);
       setPhotoGeoPending(false);
@@ -92,9 +100,8 @@ export function CompleteTask({
       "image/jpeg",
       0.72,
     );
-    if (!photoGeo?.ok) {
-      setPhotoGeoPending(true);
-      void requestBrowserPosition().then((result) => {
+    if (photoGeo && !photoGeo.ok) {
+      void trackPhotoGeo().then((result) => {
         setPhotoGeo(result);
         setPhotoGeoPending(false);
       });
@@ -102,8 +109,7 @@ export function CompleteTask({
   }
 
   async function refreshPhotoGeo() {
-    setPhotoGeoPending(true);
-    const result = await requestBrowserPosition();
+    const result = await trackPhotoGeo();
     setPhotoGeo(result);
     setPhotoGeoPending(false);
     return result;
@@ -117,7 +123,13 @@ export function CompleteTask({
     setPending(true);
     setError(null);
     const completionId = crypto.randomUUID();
-    const geo = photoGeo;
+    let geo = photoGeo;
+    if (!geo?.ok) {
+      const inflight = photoGeoPending ? photoGeoRequest.current : null;
+      geo = inflight ? await inflight : await refreshPhotoGeo();
+    }
+    setPhotoGeo(geo);
+    setPhotoGeoPending(false);
     const lat = geo?.ok ? geo.fix.lat : null;
     const lng = geo?.ok ? geo.fix.lng : null;
     const locationAvailable = Boolean(geo?.ok);
@@ -202,7 +214,9 @@ export function CompleteTask({
           ? "Buscando o local da foto…"
           : photoGeo?.ok
             ? "Local da foto pronto — vai junto com o envio."
-            : photoGeo?.message ?? "Sem local da foto. Dá para enviar mesmo assim."}
+            : photoGeo
+              ? `${photoGeo.message} A foto pode ir mesmo assim.`
+              : "Sem local da foto. A foto pode ir mesmo assim."}
       </p>
       {!photoGeoPending && photoGeo && !photoGeo.ok ? (
         <button
@@ -249,7 +263,7 @@ export function CompleteTask({
               onClick={send}
               className="kids-pop min-h-14 rounded-2xl bg-success py-4 font-extrabold text-navy shadow-[0_4px_0_#3a9a1f]"
             >
-              {pending ? "Enviando..." : "Enviar para os pais"}
+              {pending ? (photoGeoPending ? "Buscando local..." : "Enviando...") : "Enviar para os pais"}
             </button>
           </>
         )}
@@ -259,7 +273,7 @@ export function CompleteTask({
             onClick={send}
             className="kids-pop min-h-14 rounded-2xl bg-pending py-4 font-extrabold text-navy"
           >
-            Já fiz, sem foto
+            {pending ? (photoGeoPending ? "Buscando local..." : "Enviando...") : "Já fiz, sem foto"}
           </button>
         ) : null}
       </div>

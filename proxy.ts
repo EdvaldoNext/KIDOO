@@ -18,12 +18,12 @@ const PASSTHROUGH_AUTH_PATHS = new Set([
 ]);
 
 export async function proxy(request: NextRequest) {
-  if (PASSTHROUGH_AUTH_PATHS.has(request.nextUrl.pathname)) {
+  const path = request.nextUrl.pathname;
+  if (path.startsWith("/_next/") || PASSTHROUGH_AUTH_PATHS.has(path)) {
     return NextResponse.next();
   }
 
   if (!AUTH_ENABLED) {
-    const path = request.nextUrl.pathname;
     if (request.cookies.get(SIGNED_OUT_COOKIE)?.value && path.startsWith("/app")) {
       return redirectTo(request, "/");
     }
@@ -46,6 +46,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

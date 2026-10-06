@@ -4,7 +4,7 @@ import { KidsChildMissions } from "@/components/kids/KidsTaskCard";
 import { KidsMascot } from "@/components/kids/KidsMascot";
 import { latestRejectionByTask } from "@/components/tasks/RejectionFeedback";
 import { getAppContext } from "@/lib/app-context";
-import { allowanceSnapshot, paidByChild } from "@/lib/allowance";
+import { childAllowanceSnapshot } from "@/lib/allowance";
 import { currentScorePeriod } from "@/lib/dates";
 import { formatRewardAmount, isAllowanceMoney, loadFamilyReward } from "@/lib/rewards";
 
@@ -24,8 +24,8 @@ export default async function KidsHomePage() {
     .eq("role", "child")
     .order("created_at", { ascending: true });
 
-  let scoresQuery = supabase.from("monthly_scores").select("child_id, balance").eq("year", year).eq("month", month);
-  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, amount").eq("year", year).eq("month", month);
+  let scoresQuery = supabase.from("monthly_scores").select("child_id, year, month, balance");
+  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, year, month, amount");
 
   if (familyId) {
     tasksQuery = tasksQuery.eq("family_id", familyId);
@@ -69,9 +69,9 @@ export default async function KidsHomePage() {
   ];
   const money = isAllowanceMoney(reward);
   const focusKid = kids.find((kid) => kid.id === childId) ?? null;
-  const focusScore = (scores ?? []).find((row) => row.child_id === focusKid?.id);
+  const focusScore = (scores ?? []).find((row) => row.child_id === focusKid?.id && row.year === year && row.month === month);
   const focusSnapshot =
-    money && focusKid ? allowanceSnapshot(focusScore?.balance ?? 0, paidByChild(payouts)[focusKid.id] ?? 0, reward) : null;
+    money && focusKid ? childAllowanceSnapshot(focusKid.id, scores, payouts, reward, { year, month }) : null;
 
   return (
     <div className="space-y-6">
@@ -85,7 +85,7 @@ export default async function KidsHomePage() {
             <Link href="/app/kids/pontos" className="kids-pop block rounded-3xl bg-white p-4 ring-2 ring-navy/10">
               <p className="text-xs font-extrabold uppercase tracking-wide text-navy/50">Sua mesada</p>
               <p className="mt-1 text-3xl font-extrabold leading-none">{formatRewardAmount(focusScore?.balance ?? 0, reward)}</p>
-              <p className="mt-1 font-bold text-navy/70">total do mês</p>
+              <p className="mt-1 font-bold text-navy/70">ganhos do mês</p>
               <AllowanceStatus snapshot={focusSnapshot} voice="child" size="compact" />
             </Link>
           ) : null}

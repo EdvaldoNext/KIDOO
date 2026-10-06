@@ -1,15 +1,34 @@
+/** Mês da mesada segue o horário de Brasília. O servidor da Vercel usa UTC. */
+export const SCORE_TIME_ZONE = "America/Sao_Paulo";
+
+export function currentScorePeriod(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SCORE_TIME_ZONE,
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+  if (!year || !month) return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  return { year, month };
+}
+
 export function monthKey(iso: string | Date) {
   const date = iso instanceof Date ? iso : new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  const { year, month } = currentScorePeriod(date);
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 export function currentMonthKey() {
   return monthKey(new Date()) ?? "";
 }
 
-export function currentScorePeriod(now = new Date()) {
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+export function monthName(year: number, month: number) {
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("pt-BR", {
+    month: "long",
+    timeZone: "UTC",
+  });
 }
 
 export function monthLabel(key: string) {
@@ -34,7 +53,7 @@ export function uniqueMonthKeys(dates: Array<string | Date | null | undefined>) 
 
 /** Ano atual completo + qualquer outro ano que já tenha registro. */
 export function selectableMonthKeys(dates: Array<string | Date | null | undefined> = []) {
-  const years = new Set<number>([new Date().getFullYear()]);
+  const years = new Set<number>([currentScorePeriod().year]);
   for (const key of uniqueMonthKeys(dates)) {
     years.add(Number(key.slice(0, 4)));
   }

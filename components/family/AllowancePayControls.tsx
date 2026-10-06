@@ -51,6 +51,7 @@ export function AllowancePayControls({
       <div className="mt-3 space-y-3 rounded-xl bg-canvas p-3">
         <p className="text-sm font-bold">
           Confirmar baixa de {formatAllowanceMoney(snapshot.due)} para {childName}? O total do mês continua.
+          {snapshot.carriedNote ? " O pagamento quita primeiro o que ficou do mês anterior." : ""}
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -114,9 +115,9 @@ export function AllowancePayControls({
       ) : snapshot.hasEarnings ? (
         <p className="text-sm font-extrabold text-success">Mesada em dia. Novas tarefas entram no total.</p>
       ) : (
-        <p className="text-sm font-semibold text-navy/55">Ainda não tem valor para pagar neste mês.</p>
+        <p className="text-sm font-semibold text-navy/55">Ainda não tem valor para pagar.</p>
       )}
-      {snapshot.hasPaid ? (
+      {snapshot.canUndo ? (
         <button
           type="button"
           disabled={pending}

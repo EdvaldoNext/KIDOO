@@ -47,6 +47,7 @@ public class KidooLocationService extends Service {
     private static final String TAG = "KidooLocation";
     private static final long MIN_INTERVAL_MS = 15_000;
     private static final float MIN_DISTANCE_M = 20f;
+    private static final long LAST_FIX_MAX_AGE_MS = 5 * 60 * 1000;
 
     private FusedLocationProviderClient fusedClient;
     private LocationCallback callback;
@@ -128,6 +129,18 @@ public class KidooLocationService extends Service {
         if (fusedClient == null) {
             fusedClient = LocationServices.getFusedLocationProviderClient(this);
         }
+
+        try {
+            fusedClient.getLastLocation().addOnSuccessListener(location -> {
+                if (location != null && isFresh(location)) {
+                    maybePost(location);
+                }
+            });
+        } catch (SecurityException error) {
+            Log.w(TAG, "Sem permissão de localização", error);
+            return;
+        }
+
         if (callback != null) {
             return;
         }
@@ -151,8 +164,14 @@ public class KidooLocationService extends Service {
         try {
             fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper());
         } catch (SecurityException error) {
+            callback = null;
             Log.w(TAG, "Sem permissão de localização", error);
         }
+    }
+
+    private boolean isFresh(Location location) {
+        long age = System.currentTimeMillis() - location.getTime();
+        return age >= 0 && age <= LAST_FIX_MAX_AGE_MS;
     }
 
     private void stopUpdates() {

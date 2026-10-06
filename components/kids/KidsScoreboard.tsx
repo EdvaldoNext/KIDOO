@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AllowanceStatus } from "@/components/family/AllowanceStatus";
 import { KidAvatar } from "@/components/kids/KidAvatar";
-import { allowanceSnapshot } from "@/lib/allowance";
+import { allowanceSnapshot, type AllowanceSnapshot } from "@/lib/allowance";
 import { formatRewardAmount, isAllowanceMoney, monthBalanceLabel, type FamilyReward } from "@/lib/rewards";
 
 type Kid = { id: string; display_name: string };
@@ -12,6 +12,7 @@ export function KidsScoreboard({
   scores,
   pendingByChild,
   paidByChild,
+  snapshotByChild,
   size = "compact",
   reward = null,
   hrefForKid,
@@ -21,6 +22,7 @@ export function KidsScoreboard({
   scores: Score[];
   pendingByChild?: Record<string, number>;
   paidByChild?: Record<string, number>;
+  snapshotByChild?: Record<string, AllowanceSnapshot>;
   size?: "compact" | "large";
   reward?: FamilyReward | null;
   hrefForKid?: (kidId: string) => string;
@@ -40,7 +42,9 @@ export function KidsScoreboard({
           const score = scores.find((s) => s.child_id === kid.id);
           const pending = pendingByChild?.[kid.id] ?? 0;
           const isYou = currentKidId === kid.id;
-          const snapshot = money ? allowanceSnapshot(score?.balance ?? 0, paidByChild?.[kid.id] ?? 0, reward) : null;
+          const snapshot =
+            snapshotByChild?.[kid.id] ??
+            (money ? allowanceSnapshot(score?.balance ?? 0, paidByChild?.[kid.id] ?? 0, reward) : null);
           return (
             <Link
               key={kid.id}

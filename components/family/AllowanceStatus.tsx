@@ -48,6 +48,9 @@ export function AllowanceStatus({
           {snapshot.settled ? "Pronto" : formatAllowanceMoney(snapshot.due)}
         </p>
       </div>
+      {snapshot.carriedNote ? (
+        <p className={`font-bold text-navy/70 ${compact ? "text-[11px] sm:text-xs" : "text-xs"}`}>{snapshot.carriedNote}</p>
+      ) : null}
     </div>
   );
 }

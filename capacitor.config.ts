@@ -18,7 +18,7 @@ const config: CapacitorConfig = {
   appName: "KIDOO Filhos",
   webDir: "public",
   server: {
-    url: env("KIDOO_NATIVE_URL", "http://10.0.2.2:3000"),
+    url: env("KIDOO_NATIVE_URL", "https://kidoookids.vercel.app"),
     cleartext: true,
   },
   android: {

@@ -3,7 +3,7 @@ import { getAppContext } from "@/lib/app-context";
 import { KidsMascot } from "@/components/kids/KidsMascot";
 import { KidsRallyNudge } from "@/components/kids/KidsRallyNudge";
 import { KidsScoreboard } from "@/components/kids/KidsScoreboard";
-import { paidByChild } from "@/lib/allowance";
+import { childAllowanceSnapshot } from "@/lib/allowance";
 import { currentScorePeriod } from "@/lib/dates";
 import { isAllowanceMoney, kidsPointsTitle, loadFamilyReward } from "@/lib/rewards";
 
@@ -11,11 +11,7 @@ export default async function KidsPointsPage() {
   const { supabase, familyId, childId, devMode } = await getAppContext();
   const { year, month } = currentScorePeriod();
 
-  let scoresQuery = supabase
-    .from("monthly_scores")
-    .select("child_id, credits, debits, balance")
-    .eq("year", year)
-    .eq("month", month);
+  let scoresQuery = supabase.from("monthly_scores").select("child_id, year, month, credits, debits, balance");
 
   let childrenQuery = supabase
     .from("profiles")
@@ -28,7 +24,7 @@ export default async function KidsPointsPage() {
     .select("assigned_child_id, weight, kind")
     .in("status", ["pending", "awaiting_approval"]);
 
-  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, amount").eq("year", year).eq("month", month);
+  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, year, month, amount");
 
   if (familyId) {
     scoresQuery = scoresQuery.eq("family_id", familyId);
@@ -51,6 +47,14 @@ export default async function KidsPointsPage() {
     pendingByChild[task.assigned_child_id] = (pendingByChild[task.assigned_child_id] ?? 0) + (task.weight ?? 0);
   }
 
+  const period = { year, month };
+  const monthScores = (scores ?? []).filter((row) => row.year === year && row.month === month);
+  const snapshotByChild = isAllowanceMoney(reward)
+    ? Object.fromEntries(
+        (kids ?? []).map((kid) => [kid.id, childAllowanceSnapshot(kid.id, scores, payouts, reward, period)]),
+      )
+    : undefined;
+
   const title = (kids ?? []).length > 1
     ? isAllowanceMoney(reward)
       ? "Mesada da família"
@@ -66,7 +70,7 @@ export default async function KidsPointsPage() {
         </div>
         {isAllowanceMoney(reward) ? (
           <p className="text-sm font-bold text-navy/70">
-            O total do mês continua mesmo depois de receber. Só muda o que já foi pago.
+            O total do mês continua mesmo depois de receber. O que ficou sem pagar continua no mês seguinte.
           </p>
         ) : null}
         {(kids ?? []).length === 0 ? (
@@ -79,15 +83,15 @@ export default async function KidsPointsPage() {
         ) : (
           <KidsScoreboard
             kids={kids ?? []}
-            scores={scores ?? []}
+            scores={monthScores}
             pendingByChild={pendingByChild}
-            paidByChild={paidByChild(payouts)}
+            snapshotByChild={snapshotByChild}
             size="large"
             reward={reward}
             currentKidId={childId}
           />
         )}
-        <KidsRallyNudge kids={kids ?? []} scores={scores ?? []} currentKidId={childId} reward={reward} />
+        <KidsRallyNudge kids={kids ?? []} scores={monthScores} currentKidId={childId} reward={reward} />
       </section>
       {reward?.reward_note ? (
         <section className="space-y-3">

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { KidAvatar } from "@/components/kids/KidAvatar";
 import { STATUS_CLASS, STATUS_LABEL } from "@/lib/status";
 import { prettyName } from "@/lib/names";
-import { allowanceSnapshot, formatAllowanceMoney } from "@/lib/allowance";
+import { allowanceSnapshot, formatAllowanceMoney, type AllowanceSnapshot } from "@/lib/allowance";
 import { formatRewardAmountWithUnit, isAllowanceMoney, type FamilyReward } from "@/lib/rewards";
 
 type TodayTask = {
@@ -65,6 +65,7 @@ export function ParentToday({
   monthPoints,
   monthPaid = 0,
   reward,
+  allowanceSnapshot: familyAllowance = null,
   locationOn,
   firstRun = false,
   children,
@@ -75,6 +76,7 @@ export function ParentToday({
   monthPoints: number;
   monthPaid?: number;
   reward: FamilyReward | null;
+  allowanceSnapshot?: AllowanceSnapshot | null;
   locationOn: boolean;
   firstRun?: boolean;
   children?: ReactNode;
@@ -83,7 +85,7 @@ export function ParentToday({
   const waiting = tasks.filter((task) => task.status === "awaiting_approval").length;
   const pending = tasks.filter((task) => task.status === "pending").length;
   const money = isAllowanceMoney(reward);
-  const allowance = money ? allowanceSnapshot(monthPoints, monthPaid, reward) : null;
+  const allowance = money ? (familyAllowance ?? allowanceSnapshot(monthPoints, monthPaid, reward)) : null;
   const rewardHint = money ? "mesada do mês" : reward?.reward_mode === "symbolic" ? "combinado da casa" : "pontos do mês";
   const allowanceHint = allowance
     ? allowance.settled
@@ -146,6 +148,9 @@ export function ParentToday({
           <p className="mt-2 text-sm font-semibold text-navy/65">{allowanceHint}</p>
           {allowance?.hasPaid ? (
             <p className="mt-1 text-xs font-bold text-navy/55">Pago {formatAllowanceMoney(allowance.paid)}</p>
+          ) : null}
+          {allowance?.carriedNote ? (
+            <p className="mt-1 text-xs font-bold text-navy/55">{allowance.carriedNote}</p>
           ) : null}
         </Link>
       </div>

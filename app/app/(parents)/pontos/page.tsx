@@ -6,7 +6,7 @@ import { prettyName } from "@/lib/names";
 import { HelpTip } from "@/components/HelpTip";
 import { AllowancePayControls } from "@/components/family/AllowancePayControls";
 import { AllowanceStatus } from "@/components/family/AllowanceStatus";
-import { allowanceSnapshot, paidByChild } from "@/lib/allowance";
+import { childAllowanceSnapshot } from "@/lib/allowance";
 import { currentScorePeriod } from "@/lib/dates";
 import {
   formatMoney,
@@ -19,14 +19,10 @@ export default async function PointsPage() {
   const { supabase, familyId } = await getAppContext();
   const { year, month } = currentScorePeriod();
 
-  let scoresQuery = supabase
-    .from("monthly_scores")
-    .select("child_id, credits, debits, balance")
-    .eq("year", year)
-    .eq("month", month);
+  let scoresQuery = supabase.from("monthly_scores").select("child_id, year, month, credits, debits, balance");
 
   let childrenQuery = supabase.from("profiles").select("id, display_name").eq("role", "child");
-  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, amount").eq("year", year).eq("month", month);
+  let payoutsQuery = supabase.from("allowance_payouts").select("child_id, year, month, amount");
 
   if (familyId) {
     scoresQuery = scoresQuery.eq("family_id", familyId);
@@ -42,7 +38,7 @@ export default async function PointsPage() {
   ]);
   const money = isAllowanceMoney(reward);
   const kids = children ?? [];
-  const paid = paidByChild(payouts);
+  const period = { year, month };
 
   return (
     <div className="space-y-5">
@@ -53,7 +49,7 @@ export default async function PointsPage() {
           kids.length === 0
             ? "Cadastre um filho para acompanhar o combinado."
             : money
-              ? "O total do mês continua somando. A baixa só marca o que já foi pago."
+              ? "O total do mês continua somando. O que ficou sem pagar aparece no mês seguinte."
               : "Os pontos de cada um neste mês."
         }
         action={
@@ -68,7 +64,7 @@ export default async function PointsPage() {
             <div className="flex items-center gap-1">
               <span>Cada ponto vale {formatMoney(Number(reward?.currency_amount))}.</span>
               <HelpTip label="Como funciona a baixa da mesada">
-                Dar baixa registra o valor que você já pagou. O total do mês não some. Se a criança fizer mais tarefas, o total sobe e só a diferença fica a pagar.
+                Dar baixa registra o valor que você já pagou, primeiro no mês mais antigo. O total do mês não some. O que ficou sem pagar continua em aberto.
               </HelpTip>
             </div>
           ) : undefined
@@ -86,10 +82,10 @@ export default async function PointsPage() {
       ) : (
         <div className="grid gap-3">
           {kids.map((child) => {
-            const score = (scores ?? []).find((s) => s.child_id === child.id);
+            const score = (scores ?? []).find((s) => s.child_id === child.id && s.year === year && s.month === month);
             const balance = score?.balance ?? 0;
             const name = prettyName(child.display_name);
-            const snapshot = money ? allowanceSnapshot(balance, paid[child.id] ?? 0, reward) : null;
+            const snapshot = money ? childAllowanceSnapshot(child.id, scores, payouts, reward, period) : null;
             return (
               <div key={child.id} className="flex items-start gap-4 rounded-2xl bg-white p-5 ring-1 ring-navy/5">
                 <span aria-hidden>
