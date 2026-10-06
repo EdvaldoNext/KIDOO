@@ -35,13 +35,16 @@ export function AutoRefresh({ intervalMs = DEFAULT_INTERVAL_MS }: { intervalMs?:
       schedule();
     }
 
+    refreshIfVisible();
     schedule();
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onVisibility);
 
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onVisibility);
     };
   }, [router, intervalMs]);
 

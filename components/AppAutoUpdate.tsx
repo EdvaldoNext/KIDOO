@@ -1,45 +1,96 @@
 "use client";
 
+import { App } from "@capacitor/app";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-const STORAGE_KEY = "kidoo-app-version";
+const RELOAD_PREFIX = "kidoo-reload-";
+const RUNNING_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "dev";
+
+function currentUrl() {
+  return new URL(window.location.href);
+}
+
+function rememberReload(version: string) {
+  window.sessionStorage.setItem(`${RELOAD_PREFIX}${version}`, "1");
+}
+
+function alreadyReloaded(version: string) {
+  return window.sessionStorage.getItem(`${RELOAD_PREFIX}${version}`) === "1";
+}
 
 export function AppAutoUpdate() {
+  const router = useRouter();
+
   useEffect(() => {
     let cancelled = false;
 
-    async function check() {
-      const response = await fetch("/api/app-version", { cache: "no-store" });
-      if (!response.ok) return;
-      const payload = (await response.json()) as { version?: string };
-      const version = payload.version;
-      if (cancelled || !version || version === "dev") return;
+    function refreshData() {
+      if (!cancelled) router.refresh();
+    }
 
-      const seen = window.localStorage.getItem(STORAGE_KEY);
-      if (seen && seen !== version) {
-        window.localStorage.setItem(STORAGE_KEY, version);
-        window.location.reload();
+    async function check() {
+      let response: Response;
+      try {
+        response = await fetch(`/api/app-version?t=${Date.now()}`, { cache: "no-store" });
+      } catch {
+        refreshData();
         return;
       }
-      window.localStorage.setItem(STORAGE_KEY, version);
+      if (!response.ok || cancelled) return;
+
+      const payload = (await response.json()) as { version?: string };
+      const version = payload.version;
+      if (!version || version === "dev" || RUNNING_VERSION === "dev" || version === RUNNING_VERSION) {
+        const url = currentUrl();
+        if (url.searchParams.has("v")) {
+          url.searchParams.delete("v");
+          window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+        }
+        refreshData();
+        return;
+      }
+
+      if (alreadyReloaded(version)) {
+        refreshData();
+        return;
+      }
+
+      rememberReload(version);
+      const url = currentUrl();
+      url.searchParams.set("v", version.slice(0, 12));
+      window.location.replace(url.toString());
     }
 
     void check();
-    const id = window.setInterval(() => {
+
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.getRegistration().then((registration) => registration?.update());
+    }
+
+    const intervalId = window.setInterval(() => {
       if (document.visibilityState === "visible") void check();
     }, 60_000);
 
     function onVisible() {
       if (document.visibilityState === "visible") void check();
     }
+
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onVisible);
+
+    const listener = App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) void check();
+    });
 
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onVisible);
+      void listener.then((handle) => handle.remove());
     };
-  }, []);
+  }, [router]);
 
   return null;
 }

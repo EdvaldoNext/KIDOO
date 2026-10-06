@@ -16,7 +16,7 @@ No `.env.local`:
 
 - Emulador: `KIDOO_NATIVE_URL=http://10.0.2.2:3000`
 - Celular na mesma rede: `KIDOO_NATIVE_URL=http://SEU-IP-DO-PC:3000`
-- Produção: `KIDOO_NATIVE_URL=https://kidoookids.vercel.app`
+- Produção: `KIDOO_NATIVE_URL=https://kidookids.vercel.app`
 
 Depois:
 
