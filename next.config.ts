@@ -19,6 +19,18 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
       {
+        source: "/app",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
+      {
+        source: "/app/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
+      {
+        source: "/entrar",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
+      {
         source: "/:path*",
         headers: [
           { key: "Permissions-Policy", value: "geolocation=(self), camera=(self)" },

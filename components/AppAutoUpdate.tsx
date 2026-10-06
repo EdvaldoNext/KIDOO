@@ -19,6 +19,12 @@ function alreadyReloaded(version: string) {
   return window.sessionStorage.getItem(`${RELOAD_PREFIX}${version}`) === "1";
 }
 
+async function clearPageCaches() {
+  if (!("caches" in window)) return;
+  const keys = await caches.keys();
+  await Promise.all(keys.map((key) => caches.delete(key)));
+}
+
 export function AppAutoUpdate() {
   const router = useRouter();
 
@@ -30,6 +36,10 @@ export function AppAutoUpdate() {
     }
 
     async function check() {
+      if ("serviceWorker" in navigator) {
+        void navigator.serviceWorker.getRegistration().then((registration) => registration?.update());
+      }
+
       let response: Response;
       try {
         response = await fetch(`/api/app-version?t=${Date.now()}`, { cache: "no-store" });
@@ -42,6 +52,7 @@ export function AppAutoUpdate() {
       const payload = (await response.json()) as { version?: string };
       const version = payload.version;
       if (!version || version === "dev" || RUNNING_VERSION === "dev" || version === RUNNING_VERSION) {
+        if (version) window.sessionStorage.removeItem(`${RELOAD_PREFIX}${version}`);
         const url = currentUrl();
         if (url.searchParams.has("v")) {
           url.searchParams.delete("v");
@@ -57,16 +68,18 @@ export function AppAutoUpdate() {
       }
 
       rememberReload(version);
+      try {
+        await clearPageCaches();
+      } catch {
+        // A página nova ainda precisa carregar mesmo se o cache do navegador não sair.
+      }
+      if (cancelled) return;
       const url = currentUrl();
-      url.searchParams.set("v", version.slice(0, 12));
+      url.searchParams.set("v", `${version.slice(0, 12)}-${Date.now()}`);
       window.location.replace(url.toString());
     }
 
     void check();
-
-    if ("serviceWorker" in navigator) {
-      void navigator.serviceWorker.getRegistration().then((registration) => registration?.update());
-    }
 
     const intervalId = window.setInterval(() => {
       if (document.visibilityState === "visible") void check();

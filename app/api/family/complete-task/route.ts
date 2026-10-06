@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppContext, resolveChildDevice } from "@/lib/app-context";
+import { notifyParentsTaskAwaitingApproval } from "@/lib/push/send";
 import { createServiceClient } from "@/utils/supabase/admin";
 import { STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
 
@@ -91,12 +92,21 @@ async function completeTask(request: Request) {
     return NextResponse.json({ error: insertError.message }, { status: 400 });
   }
 
+  const status = (kind || task.kind) === "points" ? "awaiting_approval" : "completed";
   const { error: taskError } = await admin
     .from("tasks")
-    .update({ status: (kind || task.kind) === "points" ? "awaiting_approval" : "completed" })
+    .update({ status })
     .eq("id", taskId);
   if (taskError) {
     return NextResponse.json({ error: taskError.message }, { status: 400 });
+  }
+
+  if (status === "awaiting_approval") {
+    try {
+      await notifyParentsTaskAwaitingApproval(admin, familyId, taskId);
+    } catch {
+      // A tarefa já foi salva. Falha no push não pode impedir o envio do filho.
+    }
   }
 
   return NextResponse.json({ ok: true });
