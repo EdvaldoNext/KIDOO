@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 

@@ -1,47 +1,43 @@
-import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import {
   familyRole,
   isParentRole,
   isPlatformAdmin,
-  type AppClaims,
 } from "@/lib/auth";
+import {
+  SESSION_COOKIE,
+  SESSION_REFRESH_AFTER,
+  sessionCookieOptions,
+  signSession,
+  verifySession,
+} from "@/lib/backend/session";
 import { SIGNED_OUT_COOKIE } from "@/lib/dev-cookies";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let sessionResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(supabaseUrl!, supabaseKey!, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value),
-        );
-        supabaseResponse = NextResponse.next({
-          request,
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
+  const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
+  const claims = session?.claims ?? null;
 
-  const { data } = await supabase.auth.getClaims();
-  const claims = (data?.claims ?? null) as AppClaims | null;
+  // Sliding session: active devices keep getting a fresh token, idle ones expire.
+  if (session && claims?.sub && Date.now() / 1000 - session.issuedAt > SESSION_REFRESH_AFTER) {
+    const token = await signSession({
+      id: claims.sub,
+      email: claims.email,
+      app_metadata: claims.app_metadata,
+    });
+    const forwarded = request.headers.get("x-forwarded-proto");
+    const secure = forwarded ? forwarded.split(",")[0]?.trim() === "https" : request.nextUrl.protocol === "https:";
+    request.cookies.set(SESSION_COOKIE, token);
+    sessionResponse = NextResponse.next({ request });
+    sessionResponse.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(secure));
+  }
+
   const path = request.nextUrl.pathname;
 
   if (path.startsWith("/api/")) {
-    return supabaseResponse;
+    return sessionResponse;
   }
 
   const admin = isPlatformAdmin(claims);
@@ -56,7 +52,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = to;
     const response = NextResponse.redirect(url);
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
+    sessionResponse.cookies.getAll().forEach((cookie) => {
       response.cookies.set(cookie.name, cookie.value);
     });
     return response;
@@ -74,30 +70,30 @@ export async function updateSession(request: NextRequest) {
     if (isAdminLogin) {
       if (admin) return redirect("/admin");
       if (authed && !admin) return redirect(role === "child" ? "/app/kids" : "/app");
-      return supabaseResponse;
+      return sessionResponse;
     }
     if (!admin) {
       return redirect("/admin/login");
     }
-    return supabaseResponse;
+    return sessionResponse;
   }
 
   if (isKidsPath) {
     if (admin) return redirect("/admin");
-    if (kidsSession) return supabaseResponse;
+    if (kidsSession) return sessionResponse;
     return redirect("/entrar");
   }
 
   if (isFamilyApp) {
     if (admin) return redirect("/admin");
-    if (parentSession) return supabaseResponse;
+    if (parentSession) return sessionResponse;
     if (kidsSession) return redirect("/app/kids");
     if (signedOut || !authed) return redirect("/");
     return redirect("/onboarding");
   }
 
   if (isPasswordReset) {
-    return supabaseResponse;
+    return sessionResponse;
   }
 
   if (isFamilyLogin && authed && !signedOut) {
@@ -106,10 +102,10 @@ export async function updateSession(request: NextRequest) {
       if (isKidsEntry && request.nextUrl.searchParams.get("trocar") !== "1") {
         return redirect("/app/kids");
       }
-      return supabaseResponse;
+      return sessionResponse;
     }
     if (isParentRole(role) && !isKidsEntry) return redirect("/app");
   }
 
-  return supabaseResponse;
+  return sessionResponse;
 }

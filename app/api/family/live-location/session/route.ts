@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppContext } from "@/lib/app-context";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { requireParentActor } from "@/lib/parent-family";
 import {
   createLocationToken,

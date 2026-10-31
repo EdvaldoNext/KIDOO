@@ -1,5 +1,5 @@
 import { createHmac } from "crypto";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/client";
 import { generateKidsAccessKey, KIDS_KEY_PATTERN, normalizeKidsAccessKey } from "@/lib/kids-access";
 
 export const PARENT_KEY_PATTERN = /^PAIS-[A-Z0-9]{6}$/;
@@ -37,7 +37,7 @@ export function matchesParentInvite(familyId: string, code: string) {
   return normalizeParentAccessKey(code) === legacyParentAccessKey(familyId);
 }
 
-export async function ensureParentAccessKey(admin: SupabaseClient, familyId: string) {
+export async function ensureParentAccessKey(admin: DbClient, familyId: string) {
   const fallback = legacyParentAccessKey(familyId);
 
   try {
@@ -70,7 +70,7 @@ export async function ensureParentAccessKey(admin: SupabaseClient, familyId: str
 }
 
 export async function findFamilyByParentKeys(
-  admin: SupabaseClient,
+  admin: DbClient,
   kidsAccessKey: string,
   parentAccessKey: string,
 ) {

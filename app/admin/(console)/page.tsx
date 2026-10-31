@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/backend/server";
 
 type Stats = {
   families_total: number;

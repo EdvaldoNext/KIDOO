@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import type { LiveLocationRow } from "@/lib/live-location";
 
 const POLL_MS = 3000;
@@ -41,28 +39,10 @@ export function useFamilyLiveLocations(
     }
     document.addEventListener("visibilitychange", onVisible);
 
-    const supabase = CLIENT_DEV_BYPASS_AUTH ? null : createClient();
-    const channel = supabase
-      ?.channel(`kidoo-live-${childId ?? "family"}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "child_live_locations",
-          ...(childId ? { filter: `child_id=eq.${childId}` } : {}),
-        },
-        () => {
-          void refresh();
-        },
-      )
-      .subscribe();
-
     return () => {
       cancelled = true;
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", onVisible);
-      if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, [childId]);
 

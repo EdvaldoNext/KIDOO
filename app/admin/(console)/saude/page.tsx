@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/backend/server";
 import { runCloseMonth } from "@/app/admin/actions";
 
 export default async function AdminHealthPage() {

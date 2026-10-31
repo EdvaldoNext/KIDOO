@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAppContext, resolveChildDevice } from "@/lib/app-context";
 import { notifyParentsTaskAwaitingApproval } from "@/lib/push/send";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { STORAGE_BUCKET, STORAGE_PROVIDER } from "@/lib/photo-key";
 
 export const maxDuration = 30;

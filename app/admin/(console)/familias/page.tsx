@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/backend/server";
 import { FamiliesTable } from "@/components/admin/FamiliesTable";
 
 export default async function AdminFamiliesPage() {

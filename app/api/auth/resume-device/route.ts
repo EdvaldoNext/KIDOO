@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createClient } from "@/lib/backend/server";
+import { createServiceClient } from "@/lib/backend/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";

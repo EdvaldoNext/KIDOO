@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { EnterTestAppButton } from "@/components/dev/EnterTestAppButton";
 import { HelpTip } from "@/components/HelpTip";
@@ -47,16 +46,6 @@ export function SignUpForm() {
         setError(payload.error ?? "Não foi possível criar a família.");
         setPending(false);
         return;
-      }
-
-      if (!CLIENT_DEV_BYPASS_AUTH) {
-        const supabase = createClient();
-        const { error: signError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signError) {
-          setError("Família criada. Entre com o mesmo e-mail e senha.");
-          setPending(false);
-          return;
-        }
       }
 
       window.location.href = "/app/filhos?primeiro=1";

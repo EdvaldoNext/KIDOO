@@ -9,7 +9,7 @@ import {
 import { currentScorePeriod } from "@/lib/dates";
 import { requireParentActor } from "@/lib/parent-family";
 import { isAllowanceMoney, type FamilyReward } from "@/lib/rewards";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

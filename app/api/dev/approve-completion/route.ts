@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { decideTaskCompletion } from "@/lib/approve-completion";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 
 export async function POST(request: Request) {
   if (!DEV_BYPASS_AUTH) {

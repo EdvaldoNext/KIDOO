@@ -26,7 +26,7 @@ export function EnterTestAppButton({
       try {
         payload = (await response.json()) as { error?: string };
       } catch {
-        setError("O servidor não respondeu. Confira as variáveis do Supabase na Vercel.");
+        setError("O servidor não respondeu. Confira as variáveis do banco (Turso) na Vercel.");
         return;
       }
       if (!response.ok) {

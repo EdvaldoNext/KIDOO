@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/utils/supabase/admin";
-import { createClient } from "@/utils/supabase/server";
+import { createServiceClient } from "@/lib/backend/admin";
+import { createClient } from "@/lib/backend/server";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";

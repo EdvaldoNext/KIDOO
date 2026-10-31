@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { clearSessionCookie } from "@/lib/backend/session";
 import { clearDeviceCookies, isSecureRequest, markSignedOut } from "@/lib/dev-cookies";
 import { safeNextPath } from "@/lib/safe-next-path";
 
@@ -18,6 +19,9 @@ export async function POST(request: Request) {
   const cookieStore = await cookies();
   const secure = isSecureRequest(request);
 
+  clearSessionCookie(response, secure);
+
+  // Leftovers from the old Supabase Auth sessions.
   for (const cookie of cookieStore.getAll()) {
     if (cookie.name.startsWith("sb-")) {
       response.cookies.set(cookie.name, "", {

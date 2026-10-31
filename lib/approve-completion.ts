@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/client";
 import { currentScorePeriod } from "@/lib/dates";
 
 type DecisionInput = {
@@ -10,7 +10,7 @@ type DecisionInput = {
 };
 
 export async function decideTaskCompletion(
-  admin: SupabaseClient,
+  admin: DbClient,
   input: DecisionInput,
 ): Promise<{ ok: true } | { error: string; status: number }> {
   const { data: completion, error: completionError } = await admin

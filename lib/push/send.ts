@@ -1,5 +1,5 @@
 import webpush from "web-push";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/client";
 import {
   getVapidPrivateKey,
   getVapidPublicKey,
@@ -46,7 +46,7 @@ export async function sendPushToSubscription(
 }
 
 export async function notifyParentsTaskAwaitingApproval(
-  admin: SupabaseClient,
+  admin: DbClient,
   familyId: string,
   taskId: string,
 ) {

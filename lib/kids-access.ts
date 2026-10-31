@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/client";
 import type { AgeGroup } from "@/lib/auth";
 
 export const KIDS_ENTRY_PATH = "/entrar";
@@ -24,7 +24,7 @@ export function normalizeKidsAccessKey(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, "");
 }
 
-export async function ensureKidsAccessKey(admin: SupabaseClient, familyId: string) {
+export async function ensureKidsAccessKey(admin: DbClient, familyId: string) {
   const { data: family } = await admin
     .from("families")
     .select("kids_access_key")
@@ -48,7 +48,7 @@ export async function ensureKidsAccessKey(admin: SupabaseClient, familyId: strin
   throw new Error("Não foi possível gerar a chave da família.");
 }
 
-export async function findFamilyByKidsKey(admin: SupabaseClient, key: string) {
+export async function findFamilyByKidsKey(admin: DbClient, key: string) {
   const normalized = normalizeKidsAccessKey(key);
   if (!KIDS_KEY_PATTERN.test(normalized)) return null;
 
@@ -62,7 +62,7 @@ export async function findFamilyByKidsKey(admin: SupabaseClient, key: string) {
   return data;
 }
 
-export async function listFamilyChildren(admin: SupabaseClient, familyId: string) {
+export async function listFamilyChildren(admin: DbClient, familyId: string) {
   const { data, error } = await admin
     .from("profiles")
     .select("id, display_name, age_group")
@@ -72,28 +72,4 @@ export async function listFamilyChildren(admin: SupabaseClient, familyId: string
 
   if (error) throw error;
   return (data ?? []) as KidsDoorChild[];
-}
-
-export async function createProfileLoginToken(admin: SupabaseClient, profileId: string) {
-  const { data: userData, error: userError } = await admin.auth.admin.getUserById(profileId);
-  const email = userData.user?.email;
-  if (userError || !email) {
-    throw new Error(userError?.message || "Conta sem e-mail para entrar.");
-  }
-
-  const { data: link, error: linkError } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-  });
-
-  if (linkError || !link.properties?.hashed_token) {
-    throw new Error(linkError?.message || "Não foi possível criar a sessão.");
-  }
-
-  return { tokenHash: link.properties.hashed_token, type: "email" as const };
-}
-
-export async function signInAsChild(admin: SupabaseClient, childId: string) {
-  const { tokenHash } = await createProfileLoginToken(admin, childId);
-  return tokenHash;
 }

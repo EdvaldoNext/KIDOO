@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { type AgeGroup } from "@/lib/auth";
 import { ensureKidsAccessKey } from "@/lib/kids-access";
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     });
   } catch {
     return NextResponse.json(
-      { error: "Configure SUPABASE_SERVICE_ROLE_KEY no servidor para criar filhos." },
+      { error: "Configure TURSO_DATABASE_URL e TURSO_AUTH_TOKEN no servidor para criar filhos." },
       { status: 500 },
     );
   }

@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 
+/**
+ * Legacy endpoint from the old e-mail links. Password reset now uses
+ * /redefinir-senha?token=..., so old links just land on the recovery screen.
+ */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/redefinir-senha";
-
-  if (code) {
-    const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
-  return NextResponse.redirect(new URL(next, url.origin));
+  return NextResponse.redirect(new URL("/recuperar-senha", url.origin));
 }

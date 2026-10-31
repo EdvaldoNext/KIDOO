@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/client";
 
 export type RewardMode = "points" | "symbolic" | "allowance";
 
@@ -84,7 +84,7 @@ export function kidsPointsNavLabel(reward: FamilyReward | null | undefined) {
   return isAllowanceMoney(reward) ? "Mesada" : "Pontos";
 }
 
-export async function loadFamilyReward(supabase: SupabaseClient, familyId: string | null) {
+export async function loadFamilyReward(supabase: DbClient, familyId: string | null) {
   if (!familyId) return null;
   const { data } = await supabase
     .from("families")

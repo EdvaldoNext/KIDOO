@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "crypto";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/client";
 import type { LiveLocationRow } from "@/lib/live-location";
 
 export function hashLocationToken(token: string) {
@@ -35,7 +35,7 @@ export function parseLiveCoordinates(body: Record<string, unknown>) {
 }
 
 export async function upsertLiveLocation(
-  supabase: SupabaseClient,
+  supabase: DbClient,
   input: {
     childId: string;
     familyId: string;
@@ -67,7 +67,7 @@ export async function upsertLiveLocation(
     .maybeSingle();
 }
 
-export async function familyAllowsLiveLocation(admin: SupabaseClient, familyId: string) {
+export async function familyAllowsLiveLocation(admin: DbClient, familyId: string) {
   const { data } = await admin
     .from("families")
     .select("location_24h_enabled")
@@ -76,6 +76,6 @@ export async function familyAllowsLiveLocation(admin: SupabaseClient, familyId: 
   return Boolean(data?.location_24h_enabled);
 }
 
-export async function revokeFamilyLocationTokens(admin: SupabaseClient, familyId: string) {
+export async function revokeFamilyLocationTokens(admin: DbClient, familyId: string) {
   await admin.from("child_location_tokens").delete().eq("family_id", familyId);
 }

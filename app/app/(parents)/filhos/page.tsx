@@ -2,7 +2,7 @@ import { getAppContext } from "@/lib/app-context";
 import { ChildrenManager } from "@/components/family/ChildrenManager";
 import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
 import { ensureKidsAccessKey } from "@/lib/kids-access";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 
 export default async function ChildrenPage({
   searchParams,

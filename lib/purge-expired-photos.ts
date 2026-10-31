@@ -1,6 +1,6 @@
 import { photoRetentionCutoff } from "@/lib/photo-retention";
 import { STORAGE_BUCKET } from "@/lib/photo-key";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 
 const BATCH_SIZE = 100;
 const MAX_BATCHES = 20;

@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-
 export function RecoverPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -14,11 +12,12 @@ export function RecoverPasswordForm() {
     setError(null);
     setInfo(null);
     const email = String(formData.get("email") ?? "").trim();
-    const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/redefinir-senha`,
-    });
-    if (resetError) {
+    const response = await fetch("/api/auth/recover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).catch(() => null);
+    if (!response || !response.ok) {
       setError("Não foi possível enviar o e-mail. Confira o endereço e tente de novo.");
       setPending(false);
       return;

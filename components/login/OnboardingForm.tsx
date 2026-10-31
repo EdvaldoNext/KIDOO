@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { HelpTip } from "@/components/HelpTip";
 
 export function OnboardingForm() {
@@ -11,18 +10,21 @@ export function OnboardingForm() {
   async function onSubmit(formData: FormData) {
     setPending(true);
     setError(null);
-    const supabase = createClient();
-    const { error: rpcError } = await supabase.rpc("register_parent", {
-      p_family_name: String(formData.get("family_name") ?? ""),
-      p_display_name: String(formData.get("display_name") ?? ""),
-      p_lgpd_accepted: formData.get("lgpd") === "on",
+    const response = await fetch("/api/auth/onboarding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        family_name: String(formData.get("family_name") ?? ""),
+        display_name: String(formData.get("display_name") ?? ""),
+        lgpd_accepted: formData.get("lgpd") === "on",
+      }),
     });
-    if (rpcError) {
-      setError(rpcError.message);
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setError(result.error ?? "Não foi possível criar a família.");
       setPending(false);
       return;
     }
-    await supabase.auth.refreshSession();
     window.location.href = "/app/filhos?primeiro=1";
   }
 

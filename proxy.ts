@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { AUTH_ENABLED } from "@/lib/config";
 import { SIGNED_OUT_COOKIE } from "@/lib/dev-cookies";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
-import { updateSession } from "@/utils/supabase/middleware";
+import { updateSession } from "@/lib/backend/middleware";
 
 function redirectTo(request: NextRequest, pathname: string) {
   const url = request.nextUrl.clone();

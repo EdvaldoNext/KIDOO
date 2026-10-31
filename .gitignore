@@ -53,3 +53,6 @@ android/.idea/
 *.apk
 *.aab
 *.ap_
+
+# local sqlite db / scratch
+/.data/

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { attachProfileSession, syncProfileAuthClaims } from "@/lib/auth-session";
 import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { findFamilyByParentKeys } from "@/lib/parent-invite";

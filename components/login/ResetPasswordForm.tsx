@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -24,14 +23,18 @@ export function ResetPasswordForm() {
       return;
     }
 
-    const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) {
-      setError("Abra o link do e-mail neste celular e tente de novo.");
+    const response = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    }).catch(() => null);
+    if (!response || !response.ok) {
+      setError("Link inválido ou expirado. Peça um novo em “Esqueci minha senha”.");
       setPending(false);
       return;
     }
-    window.location.href = "/app";
+    const result = (await response.json().catch(() => ({}))) as { path?: string };
+    window.location.href = result.path ?? "/app";
   }
 
   return (

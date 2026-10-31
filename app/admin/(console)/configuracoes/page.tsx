@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/backend/server";
 import { PlatformSettingsForm } from "@/components/admin/PlatformSettingsForm";
 
 export default async function AdminSettingsPage() {

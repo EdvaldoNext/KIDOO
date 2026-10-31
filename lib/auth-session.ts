@@ -1,13 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/utils/supabase/admin";
-import { createProfileLoginToken } from "@/lib/kids-access";
+import { createServiceClient } from "@/lib/backend/admin";
 import {
-  DEV_COOKIE_MAX_AGE,
-  clearSignedOut,
-  withDevKidsSession,
-} from "@/lib/dev-cookies";
+  authAdmin,
+  checkPassword,
+  findUserByEmail,
+  findUserById,
+  getPasswordHash,
+  setPassword,
+  touchLastSignIn,
+} from "@/lib/backend/auth-users";
+import { setSessionCookie, signSession } from "@/lib/backend/session";
+import { clearSignedOut, withDevKidsSession } from "@/lib/dev-cookies";
 
 export async function syncProfileAuthClaims(profileId: string) {
   const admin = createServiceClient();
@@ -40,62 +43,66 @@ export async function syncProfileAuthClaims(profileId: string) {
   return profile;
 }
 
-export async function emailPasswordMatches(email: string, password: string) {
-  const admin = createServiceClient();
-  const listed = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (listed.error) {
-    throw new Error(listed.error.message);
+/**
+ * Accounts imported from Supabase may arrive without a password hash. While the old project is
+ * still reachable (LEGACY_SUPABASE_URL / LEGACY_SUPABASE_ANON_KEY), the first successful login
+ * is verified against it and the password is then stored here, so nobody has to reset anything.
+ */
+async function legacyPasswordMatches(email: string, password: string) {
+  const url = process.env.LEGACY_SUPABASE_URL?.trim().replace(/\/$/, "");
+  const key = process.env.LEGACY_SUPABASE_ANON_KEY?.trim();
+  if (!url || !key) return false;
+
+  try {
+    const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { apikey: key, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return response.ok;
+  } catch {
+    return false;
   }
-  const user = listed.data.users.find((item) => item.email?.toLowerCase() === email.toLowerCase());
+}
+
+export async function emailPasswordMatches(email: string, password: string) {
+  const user = await findUserByEmail(email);
   if (!user) return false;
 
+  const hash = await getPasswordHash(user.id);
+  let matches = await checkPassword(password, hash);
+
+  if (!matches && !hash && (await legacyPasswordMatches(user.email ?? email, password))) {
+    await setPassword(user.id, password);
+    matches = true;
+  }
+  if (!matches) return false;
+
   if (!user.email_confirmed_at) {
-    const confirmed = await admin.auth.admin.updateUserById(user.id, { email_confirm: true });
+    const confirmed = await authAdmin.updateUserById(user.id, { email_confirm: true });
     if (confirmed.error) {
       throw new Error(confirmed.error.message);
     }
   }
-
-  const auth = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
-  const { error } = await auth.auth.signInWithPassword({ email, password });
-  return !error;
+  return true;
 }
 
-export async function attachProfileSession(response: NextResponse, profileId: string) {
-  const { tokenHash } = await createProfileLoginToken(createServiceClient(), profileId);
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return [];
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, {
-              ...options,
-              path: "/",
-              maxAge: options.maxAge ?? DEV_COOKIE_MAX_AGE,
-              sameSite: options.sameSite ?? "lax",
-            });
-          });
-        },
-      },
-    },
-  );
+/** Signs the user in on this response: sets the session cookie with fresh claims from the database. */
+export async function attachProfileSession(
+  response: NextResponse,
+  profileId: string,
+  secure = process.env.NODE_ENV === "production",
+) {
+  const user = await findUserById(profileId);
+  if (!user) {
+    throw new Error("Conta sem acesso para entrar.");
+  }
 
-  const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: tokenHash });
-  if (!error) return response;
-
-  const retry = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
-  if (!retry.error) return response;
-
-  throw new Error(error.message || "Não foi possível entrar. Tente de novo.");
+  const token = await signSession({ id: user.id, email: user.email, app_metadata: user.app_metadata });
+  setSessionCookie(response, token, secure);
+  await touchLastSignIn(user.id).catch(() => undefined);
+  return response;
 }
 
 export async function attachChildDeviceSession(
@@ -107,7 +114,7 @@ export async function attachChildDeviceSession(
   clearSignedOut(withDevKidsSession(response, familyId, childId, secure), secure);
   try {
     await syncProfileAuthClaims(childId);
-    await attachProfileSession(response, childId);
+    await attachProfileSession(response, childId, secure);
   } catch (error) {
     console.error("child device session", error);
   }

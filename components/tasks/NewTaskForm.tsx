@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { HelpTip } from "@/components/HelpTip";
@@ -30,60 +29,20 @@ export function NewTaskForm({ childrenList }: { childrenList: Child[] }) {
       require_photo: requirePhoto,
     };
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      const response = await fetch("/api/dev/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setError(result.error ?? "Não foi possível criar a tarefa.");
-        setPending(false);
-        return;
-      }
-      router.push("/app/tarefas");
-      router.refresh();
-      return;
-    }
-
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Faça login para criar tarefas.");
-      setPending(false);
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("family_id")
-      .eq("id", user.id)
-      .single();
-
-    const { error: insertError } = await supabase.from("tasks").insert({
-      family_id: profile?.family_id,
-      created_by: user.id,
-      assigned_child_id: payload.child_id,
-      kind: payload.kind,
-      title: payload.title,
-      description: payload.description,
-      weight: payload.weight,
-      due_at: payload.due_at,
-      require_photo: payload.require_photo,
+    const response = await fetch(CLIENT_DEV_BYPASS_AUTH ? "/api/dev/tasks" : "/api/family/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-
-    if (insertError) {
-      setError(insertError.message);
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setError(result.error ?? "Não foi possível criar a tarefa.");
       setPending(false);
       return;
     }
     router.push("/app/tarefas");
     router.refresh();
   }
-
   if (childrenList.length === 0) {
     return (
       <div className="rounded-2xl bg-white p-6 text-navy/70 ring-1 ring-navy/5">

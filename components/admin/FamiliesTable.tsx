@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 type FamilyRow = {
@@ -17,10 +16,10 @@ export function FamiliesTable({ families }: { families: FamilyRow[] }) {
   const router = useRouter();
 
   async function toggle(id: string, status: string) {
-    const supabase = createClient();
-    await supabase.rpc("set_family_status", {
-      p_family_id: id,
-      p_status: status === "active" ? "disabled" : "active",
+    await fetch("/api/admin/families/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ family_id: id, status: status === "active" ? "disabled" : "active" }),
     });
     router.refresh();
   }

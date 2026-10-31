@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { createServiceClient } from "@/utils/supabase/admin";
-import { createClient } from "@/utils/supabase/server";
+import type { DbClient } from "@/lib/backend/client";
+import { createServiceClient } from "@/lib/backend/admin";
+import { createClient } from "@/lib/backend/server";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
 import { familyRole, isParentRole, type AppClaims, type UserRole } from "@/lib/auth";
 import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
@@ -9,7 +9,7 @@ import { DEV_CHILD_COOKIE } from "@/lib/kids-access";
 export const DEV_FAMILY_COOKIE = "kidoo_dev_family_id";
 
 export type AppContext = {
-  supabase: SupabaseClient;
+  supabase: DbClient;
   familyId: string | null;
   userId: string | null;
   ownerId: string | null;
@@ -22,7 +22,7 @@ async function resolveDevFamilyId(): Promise<string | null> {
   return cookieStore.get(DEV_FAMILY_COOKIE)?.value ?? null;
 }
 
-async function resolveDevProfiles(admin: SupabaseClient, familyId: string | null) {
+async function resolveDevProfiles(admin: DbClient, familyId: string | null) {
   if (!familyId) {
     return { ownerId: null as string | null, childId: null as string | null };
   }

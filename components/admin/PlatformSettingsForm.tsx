@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-
 export function PlatformSettingsForm({
   planLimits,
   featureFlags,
@@ -13,7 +11,6 @@ export function PlatformSettingsForm({
   const [message, setMessage] = useState<string | null>(null);
 
   async function save(formData: FormData) {
-    const supabase = createClient();
     const nextLimits = {
       free: {
         children: Number(formData.get("free_children")),
@@ -36,11 +33,13 @@ export function PlatformSettingsForm({
       geofencing: false,
       auto_approve: false,
     };
-    const { error } = await supabase.rpc("update_platform_settings", {
-      p_plan_limits: nextLimits,
-      p_feature_flags: nextFlags,
+    const response = await fetch("/api/admin/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan_limits: nextLimits, feature_flags: nextFlags }),
     });
-    setMessage(error ? error.message : "Configurações salvas.");
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    setMessage(response.ok ? "Configurações salvas." : (result.error ?? "Não foi possível salvar."));
   }
 
   return (

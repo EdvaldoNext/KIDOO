@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { decideTaskCompletion } from "@/lib/approve-completion";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { requireParentActor, requireParentFamilyId } from "@/lib/parent-family";
 import { STORAGE_BUCKET } from "@/lib/photo-key";
 

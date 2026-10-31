@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/backend/server";
 
 export async function runCloseMonth() {
   const supabase = await createClient();

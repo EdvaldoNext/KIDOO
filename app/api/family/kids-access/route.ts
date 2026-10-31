@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 import { ensureKidsAccessKey, KIDS_ENTRY_PATH } from "@/lib/kids-access";
 import { requireParentFamilyId } from "@/lib/parent-family";
 

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-
 export function AdminLoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -10,19 +8,17 @@ export function AdminLoginForm() {
   async function onSubmit(formData: FormData) {
     setPending(true);
     setError(null);
-    const supabase = createClient();
-    const { data, error: signError } = await supabase.auth.signInWithPassword({
-      email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
+    const response = await fetch("/api/auth/admin-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: String(formData.get("email") ?? ""),
+        password: String(formData.get("password") ?? ""),
+      }),
     });
-    if (signError) {
-      setError("Credenciais inválidas.");
-      setPending(false);
-      return;
-    }
-    if (data.user.app_metadata?.platform_admin !== true) {
-      await supabase.auth.signOut();
-      setError("Esta conta não é administrativa. Use o login da família.");
+    if (!response.ok) {
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+      setError(result.error ?? "Credenciais inválidas.");
       setPending(false);
       return;
     }

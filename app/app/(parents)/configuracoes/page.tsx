@@ -4,7 +4,7 @@ import { ParentsManager } from "@/components/family/ParentsManager";
 import { ParentPageHeader, ParentTrustStrip } from "@/components/family/ParentPageHeader";
 import { ensureParentAccessKey } from "@/lib/parent-invite";
 import { ensureKidsAccessKey } from "@/lib/kids-access";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 
 export default async function SettingsPage() {
   const { supabase, familyId } = await getAppContext();

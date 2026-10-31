@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { familyRole, isParentRole, isPlatformAdmin, type AppClaims } from "@/lib/auth";
 import { attachProfileSession, emailPasswordMatches, syncProfileAuthClaims } from "@/lib/auth-session";
 import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
-import { createServiceClient } from "@/utils/supabase/admin";
+import { createServiceClient } from "@/lib/backend/admin";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {

@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { CLIENT_DEV_BYPASS_AUTH } from "@/lib/config";
 import { HelpTip } from "@/components/HelpTip";
 import { formatMoney, formatMoneyInput, parseMoneyInput } from "@/lib/rewards";
+
+const FAMILY_API = CLIENT_DEV_BYPASS_AUTH ? "/api/dev/family" : "/api/family/settings";
 
 type Family = {
   id: string;
@@ -42,71 +43,41 @@ export function FamilySettingsForm({ family }: { family: Family }) {
       reward_note: String(formData.get("reward_note") || "") || null,
     };
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      const response = await fetch("/api/dev/family", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = (await response.json()) as { error?: string };
-      setMessage(result.error ?? "Salvo.");
-      return;
-    }
-
-    const supabase = createClient();
-    const { error } = await supabase.from("families").update(payload).eq("id", family.id);
-    setMessage(error ? error.message : "Salvo.");
+    const response = await fetch(FAMILY_API, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    setMessage(result.error ?? "Salvo.");
   }
 
   async function saveLocation(formData: FormData) {
     const enabled = formData.get("location_24h_enabled") === "on";
     const payload = { location_24h_enabled: enabled };
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      const response = await fetch("/api/dev/family", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = (await response.json()) as { error?: string };
-      if (!result.error && !enabled) {
-        await fetch("/api/family/live-location/session", { method: "DELETE" });
-      }
-      setMessage(result.error ?? (enabled ? "Rastreador ligado." : "Rastreador desligado."));
-      if (!result.error) router.refresh();
-      return;
-    }
-
-    const supabase = createClient();
-    const { error } = await supabase.from("families").update(payload).eq("id", family.id);
-    if (!error && !enabled) {
+    const response = await fetch(FAMILY_API, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!result.error && !enabled) {
       await fetch("/api/family/live-location/session", { method: "DELETE" });
     }
-    setMessage(error ? error.message : enabled ? "Rastreador ligado." : "Rastreador desligado.");
-    if (!error) router.refresh();
+    setMessage(result.error ?? (enabled ? "Rastreador ligado." : "Rastreador desligado."));
+    if (!result.error) router.refresh();
   }
 
   async function wipe() {
     if (!confirm("Apagar a família e todos os dados (fotos, tarefas, pontos)?")) return;
 
-    if (CLIENT_DEV_BYPASS_AUTH) {
-      const response = await fetch("/api/dev/family", { method: "DELETE" });
-      const result = (await response.json()) as { error?: string };
-      if (result.error) {
-        setMessage(result.error);
-        return;
-      }
-      window.location.href = "/";
+    const response = await fetch(FAMILY_API, { method: "DELETE" });
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok || result.error) {
+      setMessage(result.error ?? "Não foi possível excluir a família.");
       return;
     }
-
-    const supabase = createClient();
-    const { error } = await supabase.rpc("delete_my_family");
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-    await supabase.auth.signOut();
     window.location.href = "/";
   }
 
