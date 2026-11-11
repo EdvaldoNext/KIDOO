@@ -5,8 +5,32 @@ import { type AgeGroup } from "@/lib/auth";
 import { ensureKidsAccessKey } from "@/lib/kids-access";
 import { requireParentActor } from "@/lib/parent-family";
 
+const PRIETO_OWNER_EMAIL = "edvaldomil@gmail.com";
+const PRIETO_CHILD_LIMIT = 10;
+
 function randomPassword() {
   return crypto.randomUUID() + crypto.randomUUID();
+}
+
+async function maxChildrenForFamily(
+  admin: ReturnType<typeof createServiceClient>,
+  familyId: string,
+  plan: string | null | undefined,
+  planLimits: Record<string, { children: number | null }> | undefined,
+) {
+  const { data: owner } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("family_id", familyId)
+    .eq("role", "owner")
+    .maybeSingle();
+
+  if (owner?.id) {
+    const { data } = await admin.auth.admin.getUserById(owner.id);
+    if (data.user?.email?.toLowerCase() === PRIETO_OWNER_EMAIL) return PRIETO_CHILD_LIMIT;
+  }
+
+  return planLimits?.[plan ?? "free"]?.children;
 }
 
 export async function POST(request: Request) {
@@ -53,7 +77,7 @@ export async function POST(request: Request) {
         .single();
 
       const limits = settings?.plan_limits as Record<string, { children: number | null }> | undefined;
-      const maxChildren = limits?.[family?.plan ?? "free"]?.children;
+      const maxChildren = await maxChildrenForFamily(admin, familyId, family?.plan, limits);
       if (typeof maxChildren === "number" && (count ?? 0) >= maxChildren) {
         return NextResponse.json({ error: "Limite de filhos do plano atingido." }, { status: 400 });
       }
