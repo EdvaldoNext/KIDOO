@@ -39,7 +39,6 @@ async function requireAdmin(scope: ScopeResolver | null) {
 async function registerParent(scope: ScopeResolver | null, args: Record<string, unknown>) {
   const me = await requireScope(scope);
   const db = getDb();
-  if (me.platformAdmin) fail("admin_cannot_join_family");
   if (args.p_lgpd_accepted !== true) fail("lgpd_required");
 
   const existing = await db.execute({ sql: "SELECT 1 FROM profiles WHERE id = ?", args: [me.userId] });

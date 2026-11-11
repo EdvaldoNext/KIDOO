@@ -85,7 +85,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isFamilyApp) {
-    if (admin) return redirect("/admin");
+    if (admin && !parentSession) return redirect("/admin");
     if (parentSession) return sessionResponse;
     if (kidsSession) return redirect("/app/kids");
     if (signedOut || !authed) return redirect("/");
@@ -97,7 +97,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isFamilyLogin && authed && !signedOut) {
-    if (admin) return redirect("/admin");
+    if (admin && !isParentRole(role)) return redirect("/admin");
     if (role === "child" || (isKidsEntry && hasChildCookie)) {
       if (isKidsEntry && request.nextUrl.searchParams.get("trocar") !== "1") {
         return redirect("/app/kids");

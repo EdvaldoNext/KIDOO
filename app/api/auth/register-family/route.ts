@@ -51,13 +51,7 @@ export async function POST(request: Request) {
     const admin = createServiceClient();
     const existing = await findUserByEmail(admin, email);
     let userId = existing?.id ?? null;
-
-    if (existing?.app_metadata?.platform_admin === true) {
-      return NextResponse.json(
-        { error: "Conta administrativa entra em /admin/login — este cadastro é só da família." },
-        { status: 409 },
-      );
-    }
+    const keepPlatformAdmin = existing?.app_metadata?.platform_admin === true;
 
     if (!userId) {
       const created = await admin.auth.admin.createUser({
@@ -105,7 +99,7 @@ export async function POST(request: Request) {
         app_metadata: {
           role: profile.role ?? "owner",
           family_id: profile.family_id,
-          platform_admin: false,
+          platform_admin: keepPlatformAdmin,
         },
       });
 
@@ -178,7 +172,7 @@ export async function POST(request: Request) {
     }
 
     await admin.auth.admin.updateUserById(userId, {
-      app_metadata: { role: "owner", family_id: family.id, platform_admin: false },
+      app_metadata: { role: "owner", family_id: family.id, platform_admin: keepPlatformAdmin },
     });
 
     const response = clearSignedOut(

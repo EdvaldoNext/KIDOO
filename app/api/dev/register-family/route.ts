@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     const admin = createServiceClient();
     let existing = await findUserByEmail(admin, email);
     let userId = existing?.id ?? null;
+    const keepPlatformAdmin = existing?.app_metadata?.platform_admin === true;
 
     if (!userId) {
       const created = await admin.auth.admin.createUser({
@@ -153,7 +154,7 @@ export async function POST(request: Request) {
     }
 
     await admin.auth.admin.updateUserById(userId, {
-      app_metadata: { role: "owner", family_id: familyId, platform_admin: false },
+      app_metadata: { role: "owner", family_id: familyId, platform_admin: keepPlatformAdmin },
     });
 
     return withFamilyCookie(familyId);

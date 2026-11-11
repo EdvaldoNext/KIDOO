@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { familyRole, isParentRole, isPlatformAdmin, type AppClaims } from "@/lib/auth";
+import { familyRole, isParentRole, type AppClaims } from "@/lib/auth";
 import { attachProfileSession, emailPasswordMatches, syncProfileAuthClaims } from "@/lib/auth-session";
 import { clearSignedOut, isSecureRequest, withDevFamilySession } from "@/lib/dev-cookies";
 import { createServiceClient } from "@/lib/backend/admin";
@@ -38,13 +38,6 @@ export async function POST(request: Request) {
       email: user.email,
       app_metadata: user.app_metadata,
     } as AppClaims;
-
-    if (isPlatformAdmin(claims)) {
-      return NextResponse.json(
-        { error: "Conta administrativa entra em /admin/login — este login é só da família." },
-        { status: 409 },
-      );
-    }
 
     const role = familyRole(claims);
     if (role === "child") {

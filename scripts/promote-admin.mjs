@@ -3,7 +3,7 @@
 //   npm run db:promote-admin -- admin@dominio.com
 //   npm run db:promote-admin -- admin@dominio.com "senha-com-8+-caracteres"   (creates it if missing)
 //
-// Don't use the admin account as a parent or child.
+// The same account can also own a family. Admin login stays at /admin/login.
 import { createClient } from "@libsql/client";
 import bcrypt from "bcryptjs";
 
