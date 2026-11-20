@@ -20,6 +20,18 @@ if (url.startsWith("file:")) {
 }
 
 const db = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN?.trim() || undefined });
+
+// Existing databases already have tasks. CREATE TABLE IF NOT EXISTS will not add columns,
+// and the unique index in schema.sql needs them first.
+const taskColumns = await db.execute("PRAGMA table_info(tasks)");
+const taskColumnNames = new Set(taskColumns.rows.map((row) => row.name));
+if (taskColumnNames.size > 0 && !taskColumnNames.has("routine_id")) {
+  await db.execute("ALTER TABLE tasks ADD COLUMN routine_id TEXT");
+}
+if (taskColumnNames.size > 0 && !taskColumnNames.has("occurs_on")) {
+  await db.execute("ALTER TABLE tasks ADD COLUMN occurs_on TEXT");
+}
+
 const schema = readFileSync(resolve(import.meta.dirname, "../db/schema.sql"), "utf8");
 
 await db.executeMultiple(schema);

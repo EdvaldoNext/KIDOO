@@ -6,6 +6,7 @@ import { ParentToday } from "@/components/family/ParentToday";
 import { familyAllowanceSnapshot, sumPaid } from "@/lib/allowance";
 import { currentScorePeriod } from "@/lib/dates";
 import { isAllowanceMoney, loadFamilyReward } from "@/lib/rewards";
+import { ensureFamilyRoutineTasks } from "@/lib/routines";
 
 export default async function ParentHomePage() {
   const { supabase, familyId } = await getAppContext();
@@ -22,6 +23,7 @@ export default async function ParentHomePage() {
   }
 
   const { year, month } = currentScorePeriod();
+  await ensureFamilyRoutineTasks(familyId);
   const [tasksResult, childrenResult, familyResult, scoresResult, payoutsResult, reward, anyTaskResult] = await Promise.all([
     supabase
       .from("tasks")

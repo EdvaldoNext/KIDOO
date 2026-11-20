@@ -36,8 +36,13 @@ export function AppAutoUpdate() {
     }
 
     async function check() {
-      if ("serviceWorker" in navigator) {
-        void navigator.serviceWorker.getRegistration().then((registration) => registration?.update());
+      if ("serviceWorker" in navigator && RUNNING_VERSION !== "dev") {
+        void navigator.serviceWorker
+          .getRegistration()
+          .then((registration) => registration?.update())
+          .catch(() => {
+            // Um worker antigo no navegador pode estar inválido. A página segue sem ele.
+          });
       }
 
       let response: Response;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/backend/admin";
 import { requireParentActor, requireParentFamilyId } from "@/lib/parent-family";
 import { STORAGE_BUCKET } from "@/lib/photo-key";
+import { createFamilyTask, parseTaskBody } from "@/lib/routines";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -73,52 +74,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Só pais podem criar tarefas." }, { status: 403 });
   }
 
-  const body = (await request.json().catch(() => null)) as {
-    title?: unknown;
-    child_id?: unknown;
-    kind?: unknown;
-    weight?: unknown;
-    description?: unknown;
-    due_at?: unknown;
-    require_photo?: unknown;
-  } | null;
-
-  const title = typeof body?.title === "string" ? body.title.trim() : "";
-  const childId = typeof body?.child_id === "string" ? body.child_id : "";
-  const kind = body?.kind === "reminder" ? "reminder" : "points";
-
-  if (!title || !UUID_RE.test(childId)) {
-    return NextResponse.json({ error: "Título e filho são obrigatórios." }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  const parsed = parseTaskBody(body);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
   try {
-    const admin = createServiceClient();
-    const { data: child } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("id", childId)
-      .eq("family_id", actor.familyId)
-      .eq("role", "child")
-      .maybeSingle();
-    if (!child) {
-      return NextResponse.json({ error: "Filho não encontrado nesta família." }, { status: 404 });
+    const result = await createFamilyTask(actor.familyId, actor.parentId, parsed.value);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
-
-    const { error } = await admin.from("tasks").insert({
-      family_id: actor.familyId,
-      created_by: actor.parentId,
-      assigned_child_id: childId,
-      kind,
-      title,
-      description: typeof body?.description === "string" && body.description.trim() ? body.description.trim() : null,
-      weight: kind === "points" ? Number(body?.weight ?? 1) : 0,
-      due_at: typeof body?.due_at === "string" && body.due_at ? body.due_at : null,
-      require_photo: kind === "points" ? true : Boolean(body?.require_photo),
-    });
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, created_today: result.createdToday, repeat: parsed.value.repeat !== "once" });
   } catch {
     return NextResponse.json({ error: "Não foi possível criar a tarefa." }, { status: 500 });
   }

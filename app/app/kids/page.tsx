@@ -7,14 +7,18 @@ import { getAppContext } from "@/lib/app-context";
 import { childAllowanceSnapshot } from "@/lib/allowance";
 import { currentScorePeriod } from "@/lib/dates";
 import { formatRewardAmount, isAllowanceMoney, loadFamilyReward } from "@/lib/rewards";
+import { kidCanSeeTask, saoPauloToday } from "@/lib/routine-rules";
+import { ensureFamilyRoutineTasks } from "@/lib/routines";
 
 export default async function KidsHomePage() {
   const { supabase, familyId, childId } = await getAppContext();
   const { year, month } = currentScorePeriod();
+  if (familyId) await ensureFamilyRoutineTasks(familyId);
+  const today = saoPauloToday();
 
   let tasksQuery = supabase
     .from("tasks")
-    .select("id, title, status, weight, kind, require_photo, assigned_child_id, due_at")
+    .select("id, title, status, weight, kind, require_photo, assigned_child_id, due_at, routine_id, occurs_on")
     .in("status", ["pending", "awaiting_approval"])
     .order("created_at", { ascending: false });
 
@@ -42,7 +46,7 @@ export default async function KidsHomePage() {
     loadFamilyReward(supabase, familyId),
   ]);
   const kids = children ?? [];
-  const openTasks = tasks ?? [];
+  const openTasks = (tasks ?? []).filter((task) => kidCanSeeTask(task, today));
 
   const pendingTaskIds = openTasks.filter((task) => task.status === "pending").map((task) => task.id);
   let rejectionsByTask = new Map<string, string | null>();

@@ -16,6 +16,9 @@ export type TaskListItem = {
   kind: string;
   childName: string;
   createdAt: string;
+  routineId?: string | null;
+  routineActive?: boolean;
+  repeatLabel?: string | null;
 };
 
 type StatusFilter = "all" | "awaiting_approval" | "pending" | "completed";
@@ -105,6 +108,28 @@ export function TaskList({ items }: { items: TaskListItem[] }) {
 
     setList((current) => current.filter((item) => !ids.includes(item.id)));
     setSelected((current) => current.filter((id) => !ids.includes(id)));
+    setPending(false);
+    router.refresh();
+  }
+
+  async function stopRoutine(routineId: string) {
+    if (!confirm("Parar esta repetição? A tarefa de hoje continua. Os próximos dias não nascem mais.")) return;
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/family/routines", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: routineId, active: false }),
+    });
+    const payload = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      setError(payload.error ?? "Não foi possível parar a repetição.");
+      setPending(false);
+      return;
+    }
+    setList((current) =>
+      current.map((item) => (item.routineId === routineId ? { ...item, routineActive: false } : item)),
+    );
     setPending(false);
     router.refresh();
   }
@@ -214,6 +239,10 @@ export function TaskList({ items }: { items: TaskListItem[] }) {
           {visible.map((task) => {
             const step = nextStep(task.status);
             const waiting = task.status === "awaiting_approval";
+            const repeating = Boolean(task.routineActive && task.repeatLabel);
+            const deleteConfirmForTask = task.routineActive
+              ? "Excluir só este dia? A repetição continua nos outros dias."
+              : `Excluir esta tarefa? ${deleteConfirm}`;
             return (
               <div
                 key={task.id}
@@ -241,17 +270,35 @@ export function TaskList({ items }: { items: TaskListItem[] }) {
                       {STATUS_LABEL[task.status] ?? task.status}
                       {task.kind === "points" ? ` · ${task.weight} pts` : " · lembrete"}
                     </span>
+                    {repeating ? (
+                      <span className="inline-block rounded-full bg-canvas px-3 py-1 text-xs font-bold text-navy/70">
+                        {task.repeatLabel}
+                      </span>
+                    ) : null}
                     {step ? (
                       <Link href={step.href} className="text-sm font-bold text-royal hover:underline">
                         {step.label}
                       </Link>
+                    ) : null}
+                    {repeating && task.routineId ? (
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => {
+                          const routineId = task.routineId;
+                          if (routineId) void stopRoutine(routineId);
+                        }}
+                        className="text-sm font-bold text-navy/60 hover:underline disabled:opacity-40"
+                      >
+                        Parar repetição
+                      </button>
                     ) : null}
                   </div>
                 </div>
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => void removeIds([task.id], `Excluir esta tarefa? ${deleteConfirm}`)}
+                  onClick={() => void removeIds([task.id], deleteConfirmForTask)}
                   className="inline-flex shrink-0 rounded-xl bg-alert/10 p-2 text-alert disabled:opacity-40"
                   aria-label={`Excluir ${task.title}`}
                 >

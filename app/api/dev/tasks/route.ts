@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/backend/admin";
 import { DEV_FAMILY_COOKIE } from "@/lib/app-context";
 import { DEV_BYPASS_AUTH } from "@/lib/config";
+import { createFamilyTask, parseTaskBody } from "@/lib/routines";
 
 async function devFamilyId() {
   const cookieStore = await cookies();
@@ -50,40 +51,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nenhum pai encontrado na família." }, { status: 400 });
   }
 
-  const body = (await request.json()) as {
-    title?: string;
-    child_id?: string;
-    kind?: "points" | "reminder";
-    weight?: number;
-    description?: string;
-    due_at?: string;
-    require_photo?: boolean;
-  };
-
-  const title = (body.title ?? "").trim();
-  const childId = body.child_id ?? "";
-  const kind = body.kind ?? "points";
-
-  if (!title || !childId) {
-    return NextResponse.json({ error: "Título e filho são obrigatórios." }, { status: 400 });
+  const parsed = parseTaskBody(await request.json().catch(() => null));
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const requirePhoto = kind === "points" ? true : Boolean(body.require_photo);
-  const { error } = await admin.from("tasks").insert({
-    family_id: familyId,
-    created_by: ownerId,
-    assigned_child_id: childId,
-    kind,
-    title,
-    description: body.description?.trim() || null,
-    weight: kind === "points" ? Number(body.weight ?? 1) : 0,
-    due_at: body.due_at || null,
-    require_photo: requirePhoto,
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  try {
+    const result = await createFamilyTask(familyId, ownerId, parsed.value);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    return NextResponse.json({ ok: true, created_today: result.createdToday, repeat: parsed.value.repeat !== "once" });
+  } catch {
+    return NextResponse.json({ error: "Não foi possível criar a tarefa." }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }

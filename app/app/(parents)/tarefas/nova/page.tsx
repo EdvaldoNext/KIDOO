@@ -20,7 +20,7 @@ export default async function NewTaskPage() {
       <ParentPageHeader
         eyebrow="Combinados da casa"
         title="Nova tarefa"
-        subtitle="Algo claro e possível de hoje. Foto só quando fizer sentido."
+        subtitle="De hoje, ou repetindo na semana. Foto só quando fizer sentido."
       />
       <NewTaskForm childrenList={childrenList} />
     </div>

@@ -105,6 +105,7 @@ export const POLICIES: Record<string, TablePolicy> = {
     },
   },
   tasks: { read: byFamily },
+  task_routines: { read: byFamily },
   task_completions: { read: byFamily },
   monthly_scores: { read: byFamily },
   allowance_payouts: { read: byFamily },

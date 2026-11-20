@@ -90,11 +90,34 @@ CREATE TABLE IF NOT EXISTS tasks (
   require_photo INTEGER NOT NULL DEFAULT 1,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'awaiting_approval', 'completed', 'expired')),
   score_applied INTEGER NOT NULL DEFAULT 0,
+  routine_id TEXT,
+  occurs_on TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
 CREATE INDEX IF NOT EXISTS tasks_family_status_idx ON tasks (family_id, status);
 CREATE INDEX IF NOT EXISTS tasks_child_idx ON tasks (assigned_child_id, status);
+CREATE UNIQUE INDEX IF NOT EXISTS tasks_routine_day_idx ON tasks (routine_id, occurs_on) WHERE routine_id IS NOT NULL;
+
+-- A routine is the repeating agreement. Each day it is due, one tasks row is born (occurs_on = that day).
+CREATE TABLE IF NOT EXISTS task_routines (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6)))),
+  family_id TEXT NOT NULL REFERENCES families (id) ON DELETE CASCADE,
+  created_by TEXT NOT NULL REFERENCES profiles (id),
+  assigned_child_id TEXT NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'points' CHECK (kind IN ('points', 'reminder')),
+  title TEXT NOT NULL CHECK (length(trim(title)) BETWEEN 1 AND 80),
+  description TEXT,
+  weight INTEGER NOT NULL DEFAULT 1 CHECK (weight >= 0 AND weight <= 20),
+  require_photo INTEGER NOT NULL DEFAULT 1,
+  weekdays INTEGER NOT NULL CHECK (weekdays BETWEEN 1 AND 127),
+  time_local TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS task_routines_family_idx ON task_routines (family_id, active);
 
 CREATE TABLE IF NOT EXISTS task_completions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6)))),
